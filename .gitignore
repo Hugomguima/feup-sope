@@ -1,12 +1,3 @@
-# ---- Ignore all files
-*
-
-# ---- Whitelist any file with extension
-!*.*
-
-# ---- Whitelist any directory
-!*/
-
 # ---- Ignore objects, binaries and libraries
 lib/
 obj/
