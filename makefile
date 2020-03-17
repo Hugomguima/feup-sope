@@ -1,30 +1,29 @@
-
-
 # ---- C compiler
-CC = gcc
+CC =gcc
 
 # ---- Directories
 # Source files
-SDIR = ./src
+SDIR =./src
 # Header files
-IDIR = ./include
+IDIR =./include
 # Library files
-LDIR = ./lib
+LDIR =./lib
 # Object files
-ODIR = ./obj
+ODIR =./obj
 # Executable files
-BDIR = ./bin
+BDIR =./bin
 
 # Flags
-CFLAGS = -Wall
-IFLAGS = -I $(IDIR)
+CFLAGS =-Wall
+IFLAGS =-I$(IDIR)
+LFLAGS =-L$(LDIR)
 
 # Dependencies
-DEPS =
-MAIN = main.o
+DEPS =$(ODIR)/utils.o $(ODIR)/parse.o
+MAIN =main.o
 
 # Executable
-TARGET = simpledu
+TARGET =simpledu
 
 .PHONY: all clean
 
@@ -42,7 +41,7 @@ $(LDIR)/lib.a: $(DEPS)
 	ar rvs $@ $(DEPS)
 
 $(BDIR)/$(TARGET): makelib $(ODIR)/$(MAIN)
-	$(CC) $(CFLAGS) -o $@ $(word 2, $^)
+	$(CC) $(CFLAGS) -o $@ $(word 2, $^) $(LFLAGS)
 
 makefolders:
 	mkdir -p $(LDIR)

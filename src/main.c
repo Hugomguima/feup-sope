@@ -1,3 +1,5 @@
+#include "parse.h"
+
 #include <errno.h>
 #include <stdio.h>
 #include <string.h>
@@ -17,6 +19,8 @@ int main(int argc, char *argv[]) {
         write(STDERR_FILENO, error, strlen(error));
         return EINVAL;
     }
+
+    printf("Flags: %x\n", parse_cmd(argc - 1, &argv[1]));
 
     return 0;
 }
