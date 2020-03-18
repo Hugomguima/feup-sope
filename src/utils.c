@@ -3,6 +3,13 @@
 #include <string.h>
 #include <assert.h>
 #include <stdlib.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
+
+/*----------------------------------------------------------------------------*/
+/*                              STRING FUNCTIONS                              */
+/*----------------------------------------------------------------------------*/
 
 int str_find(const char *str, const char *pattern, int pos) {
     if (str == NULL || pattern == NULL) return -1;
@@ -64,4 +71,28 @@ int str_isDigit(const char *str) {
         if (ch < '0' || ch > '9') return 0;
 
     return 1;
+}
+
+int str_isAlpha(const char *str) {
+    if (str == NULL || strlen(str) == 0) return -1;
+
+    int i = 0;
+    char ch;
+    while ((ch = str[i++]) != 0)
+        if (!((ch >= 'A' && ch <= 'Z') || (ch >= 'a' && ch <= 'z'))) return 0;
+
+    return 1;
+}
+
+/*----------------------------------------------------------------------------*/
+/*                              FILES FUNCTIONS                               */
+/*----------------------------------------------------------------------------*/
+
+int path_isdir(const char *path) {
+    struct stat status;
+
+    if (stat(path, &status) == -1) {
+        return -1;
+    }
+    return S_ISDIR(status.st_mode);
 }

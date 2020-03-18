@@ -1,6 +1,10 @@
 #ifndef UTILS_H_INCLUDED
 #define UTILS_H_INCLUDED
 
+/*----------------------------------------------------------------------------*/
+/*                              STRING FUNCTIONS                              */
+/*----------------------------------------------------------------------------*/
+
 /**
  * @brief Find pattern in str
  * @param   str         Pointer to string to be searched
@@ -24,5 +28,18 @@ char** str_split(const char *str, const char *delim);
  * @return  0 if string doesn't compose an integer, 1 if it is an integer, -1 if error occurs
  */
 int str_isDigit(const char *str);
+
+/**
+ * @brief Verifies if string composes of only alphabetic characters
+ * @param   str         Pointer to string
+ * @return  0 if string doesn't compose of only alphabetic characters, 1 if it only has alphabetic characters, -1 if error occurs
+ */
+int str_isAlpha(const char *str);
+
+/*----------------------------------------------------------------------------*/
+/*                              FILES FUNCTIONS                               */
+/*----------------------------------------------------------------------------*/
+
+int path_isdir(const char *path);
 
 #endif // UTILS_H_INCLUDED

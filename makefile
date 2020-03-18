@@ -41,7 +41,7 @@ $(LDIR)/lib.a: $(DEPS)
 	ar rvs $@ $(DEPS)
 
 $(BDIR)/$(TARGET): makelib $(ODIR)/$(MAIN)
-	$(CC) $(CFLAGS) -o $@ $(word 2, $^) $(LFLAGS)
+	$(CC) $(CFLAGS) -o $@ $(word 2, $^) $(DEPS)
 
 makefolders:
 	mkdir -p $(LDIR)
