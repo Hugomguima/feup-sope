@@ -1,9 +1,15 @@
-#include <parse.h>
+/* MAIN HEADER */
+#include "parse.h"
 
-#include <string.h>
+/* INCLUDE HEADERS */
+#include "utils.h"
+
+/* SYSTEM CALLS  HEADERS */
 #include <unistd.h>
+
+/* C LIBRARY HEADERS */
 #include <stdio.h>
-#include <utils.h>
+#include <string.h>
 
 int parse_cmd(int argc, char *argv[], struct parse_info_t *info) {
     int flags = 0;
@@ -164,7 +170,7 @@ int parse_cmd(int argc, char *argv[], struct parse_info_t *info) {
                 }
 
                 sscanf(argv[i+1], "%d", &(info->block_size));
-                
+
                 flags |= FLAG_BSIZE; // update flag
                 i++;
             }
