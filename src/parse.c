@@ -5,8 +5,14 @@
 #include <stdio.h>
 #include <utils.h>
 
-int parse_cmd(int argc, char *argv[]) {
+int parse_cmd(int argc, char *argv[], struct parse_info_t *info) {
     int flags = 0;
+
+    if (argv == NULL || info == NULL) {
+        write(STDERR_FILENO, "Invalid argument, one or more null pointers\n", 44);
+        flags |= FLAG_ERR;
+        return flags;
+    }
 
     // Obligatory flag -l
     if (strcmp(argv[0], "-l") != 0 && strcmp(argv[0], "--count-links") != 0) {
@@ -51,12 +57,9 @@ int parse_cmd(int argc, char *argv[]) {
                 return flags;
             }
 
-            int size;
+            sscanf(tmp, "%d", &(info->block_size));
 
-            sscanf(tmp, "%d", &size);
-            printf("Size: %d\n", size);
-
-            flags |= FLAG_BYTES; // update flag
+            flags |= FLAG_BSIZE; // update flag
         }
         else if (strcmp(argv[i], "--dereference") == 0) {
             if (flags & FLAG_DEREF) {
@@ -91,30 +94,27 @@ int parse_cmd(int argc, char *argv[]) {
                 return flags;
             }
 
-            int depth;
-
-            sscanf(tmp, "%d", &depth);
-            printf("Max Depth: %d\n", depth);
+            sscanf(tmp, "%d", &(info->max_depth));
 
             flags |= FLAG_MAXDEPTH; // update flag
         }
         else if (strncmp(argv[i], "-", 1) == 0) {
             char *tmp = argv[i] + 1; // skip "-"
 
-            if (strlen(tmp) == 0 || str_isDigit(tmp) < 1) {
-                write(STDERR_FILENO, "Invalid flag or flags\n", 13);
+            if (strlen(tmp) == 0 || str_isAlpha(tmp) < 1) {
+                write(STDERR_FILENO, "Invalid flag or flags\n", 23);
                 flags |= FLAG_ERR;
                 return flags;
             }
 
-            if (str_find(tmp, "l", 0) > 0) {
+            if (str_find(tmp, "l", 0) >= 0) {
                 if (flags & FLAG_ALL) {
                     write(STDERR_FILENO, "Repeated flag: -a or --all\n", 28);
                     flags |= FLAG_ERR;
                     return flags;
                 }
             }
-            if (str_find(tmp, "a", 0) > 0) {
+            if (str_find(tmp, "a", 0) >= 0) {
                 if (flags & FLAG_ALL) {
                     write(STDERR_FILENO, "Repeated flag: -a or --all\n", 28);
                     flags |= FLAG_ERR;
@@ -123,7 +123,7 @@ int parse_cmd(int argc, char *argv[]) {
 
                 flags |= FLAG_ALL; // update flag
             }
-            if (str_find(tmp, "b", 0) > 0) {
+            if (str_find(tmp, "b", 0) >= 0) {
                 if (flags & FLAG_BYTES) {
                     write(STDERR_FILENO, "Repeated flag: -b or --bytes\n", 30);
                     flags |= FLAG_ERR;
@@ -132,7 +132,25 @@ int parse_cmd(int argc, char *argv[]) {
 
                 flags |= FLAG_BYTES; // update flag
             }
-            if (str_find(tmp, "B", 0) > 0) {
+            if (str_find(tmp, "L", 0) >= 0) {
+                if (flags & FLAG_DEREF) {
+                    write(STDERR_FILENO, "Repeated flag: -L or --dereference\n", 36);
+                    flags |= FLAG_ERR;
+                    return flags;
+                }
+
+                flags |= FLAG_DEREF; // update flag
+            }
+            if (str_find(tmp, "S", 0) >= 0) {
+                if (flags & FLAG_SEPDIR) {
+                    write(STDERR_FILENO, "Repeated flag: -S or --separate-dirs\n", 38);
+                    flags |= FLAG_ERR;
+                    return flags;
+                }
+
+                flags |= FLAG_SEPDIR; // update flag
+            }
+            if (str_find(tmp, "B", 0) >= 0) {
                 if (flags & FLAG_BSIZE) {
                     write(STDERR_FILENO, "Repeated flag: -B or --block-size\n", 35);
                     flags |= FLAG_ERR;
@@ -145,34 +163,34 @@ int parse_cmd(int argc, char *argv[]) {
                     return flags;
                 }
 
-                int size;
-
-                sscanf(argv[i+1], "%d", &size);
-                printf("Size: %d\n", size);
-
-                flags |= FLAG_BYTES; // update flag
-            }
-            if (str_find(tmp, "L", 0) > 0) {
-                if (flags & FLAG_DEREF) {
-                    write(STDERR_FILENO, "Repeated flag: -L or --dereference\n", 36);
-                    flags |= FLAG_ERR;
-                    return flags;
-                }
-
-                flags |= FLAG_DEREF; // update flag
-            }
-            if (str_find(tmp, "S", 0) > 0) {
-                if (flags & FLAG_DEREF) {
-                    write(STDERR_FILENO, "Repeated flag: -S or --separate-dirs\n", 38);
-                    flags |= FLAG_ERR;
-                    return flags;
-                }
-
-                flags |= FLAG_SEPDIR; // update flag
+                sscanf(argv[i+1], "%d", &(info->block_size));
+                
+                flags |= FLAG_BSIZE; // update flag
+                i++;
             }
         }
         else { // verify if it's valid path
 
+            if (flags & FLAG_PATH) {
+                write(STDERR_FILENO, "Repeated flag: path\n", 21);
+                flags |= FLAG_ERR;
+                return flags;
+            }
+
+            int r = path_isdir(argv[i]);
+
+            switch (r) {
+                case -1:
+                    flags |= FLAG_ERR;
+                    return flags;
+                case 0:
+                    write(STDERR_FILENO, "Path isn't a directory\n", 20);
+                    flags |= FLAG_ERR;
+                    return flags;
+                case 1:
+                    info->path = strdup(argv[i]);
+                    flags |= FLAG_PATH;
+            }
         }
     }
 
