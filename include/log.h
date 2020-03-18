@@ -8,10 +8,11 @@
 int init_log();
 
 /**
- * @brief           Write a line to log
- * @return          0 uppon sucess or 1 otherwhise
+ * @brief               Write a line to log
+ * @param logString     String to put in log
+ * @return              0 uppon sucess or 1 otherwhise
  */
-int write_log();
+int write_log(char *logString);
 
 /**
  * @brief           Close log file

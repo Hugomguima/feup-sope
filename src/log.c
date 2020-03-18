@@ -24,15 +24,14 @@ int init_log() {
     }
 
     // Write the first line of log
-    char str[] = "instant – pid – action – info\n";
-    write(fileLog, str, sizeof(str)/ sizeof(char));
+    char *str = "instant – pid – action – info \n";
+    write(fileLog, str, strlen(str));
 
     return 0;
 }
 
-int write_log() {
-    // To do
-
+int write_log(char *logString) {
+    write(fileLog, logString, strlen(logString));
     return 0;
 }
 

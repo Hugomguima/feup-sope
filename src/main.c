@@ -19,8 +19,6 @@ int main(int argc, char *argv[], char * envp[]) {
         return EINVAL;
     }
 
-    write_log();
-    
     printf("Flags: %x\n", parse_cmd(argc - 1, &argv[1]));
 
     return 0;
