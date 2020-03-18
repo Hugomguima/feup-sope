@@ -2,6 +2,7 @@
 
 /* INCLUDE HEADERS */
 #include "parse.h"
+#include "log.h"
 
 /* SYSTEM CALLS  HEADERS */
 #include <unistd.h>
@@ -14,10 +15,8 @@
 
 #define BUFFER_SIZE 255
 
-int main(int argc, char *argv[]) {
-
+int main(int argc, char *argv[], char * envp[]) {
     if (argc < 2 || argc > 9) {
-
         char error[BUFFER_SIZE];
         char *s = strerror(EINVAL);
         sprintf(error, "Error %d: %s\n"
