@@ -13,7 +13,7 @@ int write_log() {
       printf("Write log to LOG_FILENAME");
   }
   else { // Write log to a previous file
-      int fileLog = open("log.txt", O_RDONLY);
+      int fileLog = open("log.txt", O_WRONLY | O_EXCL | O_CREAT, 0644);
       if (fileLog == -1) {
           printf("%s", strerror(errno));
           exit(1);
