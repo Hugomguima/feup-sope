@@ -58,7 +58,6 @@ int parse_cmd(int argc, char *argv[], struct parse_info_t *info) {
             }
 
             sscanf(tmp, "%d", &(info->block_size));
-            printf("Size: %d\n", (info->block_size));
 
             flags |= FLAG_BSIZE; // update flag
         }
@@ -96,7 +95,6 @@ int parse_cmd(int argc, char *argv[], struct parse_info_t *info) {
             }
 
             sscanf(tmp, "%d", &(info->max_depth));
-            printf("Max Depth: %d\n", (info->max_depth));
 
             flags |= FLAG_MAXDEPTH; // update flag
         }
@@ -164,10 +162,9 @@ int parse_cmd(int argc, char *argv[], struct parse_info_t *info) {
                     flags |= FLAG_ERR;
                     return flags;
                 }
-                printf("Teste\n");
-                sscanf(argv[i+1], "%d", &(info->block_size));
-                printf("Size: %d\n", (info->block_size));
 
+                sscanf(argv[i+1], "%d", &(info->block_size));
+                
                 flags |= FLAG_BSIZE; // update flag
                 i++;
             }
