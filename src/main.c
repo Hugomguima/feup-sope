@@ -40,6 +40,44 @@ int main(int argc, char *argv[], char * envp[]) {
         printf("Max Depth: %d\n", info.max_depth);
     }
 
+    init_log();
+    char *a = "hello\n";
+    char *b = "worldds\n";
+    char *c = "test\n";
+    char *d = "all\n";
+    write_log(a);
+    write_log(b);
+    write_log(c);
+    write_log(d);
+    write_log(a);
+    write_log(b);
+    write_log(c);
+    write_log(d);
+    write_log(a);
+    write_log(b);
+    write_log(c);
+    write_log(d);
+    write_log(a);
+    write_log(b);
+    write_log(c);
+    write_log(d);
+    write_log(a);
+    write_log(b);
+    write_log(c);
+    write_log(d);
+    write_log(a);
+    write_log(b);
+    write_log(c);
+    write_log(d);
+    write_log(a);
+    write_log(b);
+    write_log(c);
+    write_log(d);
+    write_log(a);
+    write_log(b);
+    write_log(c);
+    write_log(d);
+    close_log();
     // free memory
     free(info.path);
 

@@ -7,6 +7,7 @@
 /* SYSTEM CALLS HEADERS */
 #include <unistd.h>
 #include <fcntl.h>
+#include <sys/time.h>
 
 /* C LIBRARY HEADERS */
 #include <stdlib.h>
@@ -14,6 +15,7 @@
 #include <string.h>
 #include <errno.h>
 
+struct timeval initTime;
 int fileLog;
 
 int init_log() {
@@ -28,6 +30,7 @@ int init_log() {
         printf("%s\n", strerror(errno));
         return 1;
     }
+    gettimeofday(&initTime, NULL);
 
     // Write the first line of log
     char *str = "instant – pid – action – info \n";
@@ -37,6 +40,10 @@ int init_log() {
 }
 
 int write_log(char *logString) {
+    struct timeval currentTime;
+    gettimeofday(&currentTime, NULL);
+    long int elapsedTime = (currentTime.tv_usec - initTime.tv_usec) / 1000;
+    printf("Clock: %8ld\n", elapsedTime);
     write(fileLog, logString, strlen(logString));
     return 0;
 }
