@@ -6,6 +6,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <errno.h>
 
 /*----------------------------------------------------------------------------*/
 /*                              STRING FUNCTIONS                              */
@@ -92,6 +93,9 @@ int path_isdir(const char *path) {
     struct stat status;
 
     if (stat(path, &status) == -1) {
+        char *error = strerror(errno);
+        write(STDERR_FILENO, error, strlen(error));
+        write(STDERR_FILENO, "\n", 1);
         return -1;
     }
     return S_ISDIR(status.st_mode);
