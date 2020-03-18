@@ -1,11 +1,17 @@
+/* MAIND HEARDER */
 #include "log.h"
 
-#include <string.h>
+/* INCLUDE HEADERS */
+#include <utils.h>
+
+/* SYSTEM CALLS HEADERS */
 #include <unistd.h>
+#include <fcntl.h>
+
+/* C LIBRARY HEADERS */
 #include <stdlib.h>
 #include <stdio.h>
-#include <fcntl.h>
-#include <utils.h>
+#include <string.h>
 #include <errno.h>
 
 int fileLog;
