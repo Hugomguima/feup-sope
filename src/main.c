@@ -1,4 +1,5 @@
 #include "parse.h"
+#include "log.h"
 
 #include <errno.h>
 #include <stdio.h>
@@ -7,10 +8,8 @@
 
 #define BUFFER_SIZE 255
 
-int main(int argc, char *argv[]) {
-
+int main(int argc, char *argv[], char * envp[]) {
     if (argc < 2 || argc > 9) {
-
         char error[BUFFER_SIZE];
         char *s = strerror(EINVAL);
         sprintf(error, "Error %d: %s\n"
@@ -20,6 +19,8 @@ int main(int argc, char *argv[]) {
         return EINVAL;
     }
 
+    write_log();
+    
     printf("Flags: %x\n", parse_cmd(argc - 1, &argv[1]));
 
     return 0;
