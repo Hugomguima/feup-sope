@@ -1,11 +1,17 @@
+/* MAIN HEADER */
+
+/* INCLUDE HEADERS */
 #include "parse.h"
 #include "log.h"
 
-#include <errno.h>
+/* SYSTEM CALLS  HEADERS */
+#include <unistd.h>
+
+/* C LIBRARY HEADERS */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/unistd.h>
+#include <errno.h>
 
 #define BUFFER_SIZE 255
 

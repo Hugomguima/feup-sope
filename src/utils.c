@@ -1,11 +1,17 @@
-#include <utils.h>
+/* MAIN HEADER */
+#include "utils.h"
 
-#include <string.h>
-#include <assert.h>
-#include <stdlib.h>
+/* INCLUDE HEADERS */
+
+/* SYSTEM CALLS  HEADERS */
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
+
+/* C LIBRARY HEADERS */
+#include <stdlib.h>
+#include <string.h>
+#include <assert.h>
 #include <errno.h>
 
 /*----------------------------------------------------------------------------*/
