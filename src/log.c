@@ -20,10 +20,10 @@ int file_log;
 
 int init_log() {
     if(getenv("LOG_FILENAME") != NULL) { // Write log to LOG_FILENAME
-        file_log = open("LOG_FILENAME" , O_WRONLY | O_CREAT, 0644);
+        file_log = open("LOG_FILENAME" , O_WRONLY | O_CREAT, 0644); //TESTAR ISTO E 0644 VARIAVEL MACRO E VER FLAGS
     }
     else { // Write log to a pre defined file
-        file_log = open("log.txt", O_WRONLY | O_CREAT, 0644);
+        file_log = open("log.txt", O_WRONLY | O_CREAT, 0644); // CRIAR UMA UMA FOLDER
     }
 
     if (file_log == -1) { // Test if file is open
