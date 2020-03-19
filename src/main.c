@@ -39,7 +39,15 @@ int main(int argc, char *argv[], char * envp[]) {
     if (flags & FLAG_MAXDEPTH) {
         printf("Max Depth: %d\n", info.max_depth);
     }
-
+    /* Write Log
+      init_log();
+      char *a = "hello\n";
+      sleep(3.7);
+      write_log(a);
+      sleep(2.90);
+      write_log(a);
+      close_log();
+    */
     // free memory
     free(info.path);
 
