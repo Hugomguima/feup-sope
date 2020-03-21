@@ -4,9 +4,6 @@
 /* INCLUDE HEADERS */
 
 /* SYSTEM CALLS  HEADERS */
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <unistd.h>
 
 /* C LIBRARY HEADERS */
 #include <stdlib.h>
@@ -95,14 +92,43 @@ int str_isAlpha(const char *str) {
 /*                              FILES FUNCTIONS                               */
 /*----------------------------------------------------------------------------*/
 
-int path_isdir(const char *path) {
-    struct stat status;
-
-    if (stat(path, &status) == -1) {
+int fget_status(const char *path, struct stat *pstat) {
+    if (stat(path, pstat) == -1) {
         char *error = strerror(errno);
         write(STDERR_FILENO, error, strlen(error));
         write(STDERR_FILENO, "\n", 1);
         return -1;
     }
-    return S_ISDIR(status.st_mode);
+    return 0;
+}
+
+file_type_t fget_type(const char *path) {
+    struct stat status;
+
+    if (fget_status(path, &status)) {
+        return FTYPE_ERROR;
+    }
+
+    return sget_type(&status);
+}
+
+file_type_t sget_type(const struct stat *pstat) {
+    switch (pstat->st_mode & S_IFMT) {
+        case S_IFREG:
+            return FTYPE_REG;
+        case S_IFDIR:
+            return FTYPE_DIR;
+        case S_IFCHR:
+            return FTYPE_CHR;
+        case S_IFBLK:
+            return FTYPE_BLOCK;
+        case S_IFLNK:
+            return FTYPE_LINK;
+        case S_IFIFO:
+            return FTYPE_FIFO;
+        case S_IFSOCK:
+            return FTYPE_UNKNOWN;
+        default:
+            return FTYPE_UNKNOWN;
+    }
 }

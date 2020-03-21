@@ -3,6 +3,7 @@
 /* INCLUDE HEADERS */
 #include "parse.h"
 #include "log.h"
+#include "cleanup.h"
 
 /* SYSTEM CALLS  HEADERS */
 #include <unistd.h>
@@ -14,6 +15,8 @@
 #include <errno.h>
 
 #define BUFFER_SIZE 255
+#define READ_PIPE   0
+#define WRITE_PIPE  1
 
 int main(int argc, char *argv[], char * envp[]) {
     if (argc < 2 || argc > 9) {
@@ -26,19 +29,22 @@ int main(int argc, char *argv[], char * envp[]) {
         return EINVAL;
     }
 
-    struct parse_info_t info;
-    int flags = parse_cmd(argc - 1, &argv[1], &info);
-    printf("Flags: %x\n", flags);
+    int ret;
 
-    if (flags & FLAG_PATH) {
-        printf("Path: %s\n", info.path);
+    // error | path | max-depth | S | L | B | b | a | l
+    int flags;
+
+    struct parse_info_t info;
+    flags = parse_cmd(argc - 1, &argv[1], &info);
+
+    if (flags & FLAG_ERR) {
+        free_pointers(1, info.path);
+        return -1;
     }
-    if (flags & FLAG_BSIZE) {
-        printf("Block Size: %d\n", info.block_size);
-    }
-    if (flags & FLAG_MAXDEPTH) {
-        printf("Max Depth: %d\n", info.max_depth);
-    }
+
+    char *path;
+    int block_size;
+
     /* Write Log
       init_log();
       char *a = "hello\n";
@@ -49,7 +55,7 @@ int main(int argc, char *argv[], char * envp[]) {
       close_log();
     */
     // free memory
-    free(info.path);
+    free_pointers(1, info.path);
 
     return 0;
 }

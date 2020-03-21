@@ -19,7 +19,7 @@ IFLAGS =-I$(IDIR)
 LFLAGS =-L$(LDIR)
 
 # Dependencies
-DEPS =$(ODIR)/utils.o $(ODIR)/parse.o $(ODIR)/log.o
+DEPS =$(ODIR)/utils.o $(ODIR)/parse.o $(ODIR)/log.o $(ODIR)/cleanup.o
 MAIN =main.o
 
 # Executable

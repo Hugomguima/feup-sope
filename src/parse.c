@@ -183,20 +183,15 @@ int parse_cmd(int argc, char *argv[], struct parse_info_t *info) {
                 return flags;
             }
 
-            int r = path_isdir(argv[i]);
+            struct stat status;
 
-            switch (r) {
-                case -1:
-                    flags |= FLAG_ERR;
-                    return flags;
-                case 0:
-                    write(STDERR_FILENO, "Path isn't a directory\n", 20);
-                    flags |= FLAG_ERR;
-                    return flags;
-                case 1:
-                    info->path = strdup(argv[i]);
-                    flags |= FLAG_PATH;
+            if (fget_status(argv[i], &status) == -1) {
+                flags |= FLAG_ERR;
+                return flags;
             }
+
+            info->path = strdup(argv[i]);
+            flags |= FLAG_PATH;
         }
     }
 
