@@ -157,3 +157,17 @@ file_type_t sget_type(const struct stat *pstat) {
             return FTYPE_UNKNOWN;
     }
 }
+
+long fget_size(int bytes, struct stat *status, int block_size) {
+    long fsize;
+    if (bytes) {
+        fsize = status->st_size;
+    } else {
+        if (block_size > 512) {
+            fsize = status->st_blocks / (block_size / 512);
+        } else {
+            fsize = status->st_blocks * (512 / block_size);
+        }
+    }
+    return fsize;
+}

@@ -37,6 +37,11 @@ struct parse_info {
 void init_parse_info(parse_info_t *info);
 
 /**
+ * Builds array argv needed to execute this program
+ */
+char** build_argv(char *argv0, int flags, parse_info_t *info);
+
+/**
  * @brief Parses command from command line and returns the activated flags
  * @param argc      Number of arguments got from command line
  * @param argv      Pointer to strings containing all the parts from the command

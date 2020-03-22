@@ -18,7 +18,7 @@ void init_parse_info(parse_info_t *info) {
     info->max_depth = 0;
 }
 
-char** build_cmd(char *argv0, int flags, parse_info_t *info) {
+char** build_argv(char *argv0, int flags, parse_info_t *info) {
 
     int n = 1; // argv size initialized with 1 for argv0
     for (int i = 0, k = 1; i < 7; i++, k <<= 1) { // ignore path flag

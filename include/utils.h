@@ -84,4 +84,6 @@ file_type_t fget_type(const char *path);
 
 file_type_t sget_type(const struct stat *pstat);
 
+long fget_size(int bytes, struct stat *status, int block_size);
+
 #endif // UTILS_H_INCLUDED
