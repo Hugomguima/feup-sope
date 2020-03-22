@@ -142,7 +142,7 @@ int main(int argc, char *argv[]/*, char * envp[]*/) {
                                             return errno;
                                         }
                                     case 0:
-                                        if (execv(new_path, new_argv) == -1) {
+                                        if (execv(argv[0], new_argv) == -1) {
                                             char error[BUFFER_SIZE];
                                             char *s = strerror(errno);
                                             sprintf(error, "Error %d: %s\n", errno, s);
@@ -152,7 +152,13 @@ int main(int argc, char *argv[]/*, char * envp[]*/) {
                                         return 0; // exit child
                                     default:
                                         {
-                                            wait(&return_status);
+                                            if (wait(&return_status) == -1) {
+                                                char error[BUFFER_SIZE];
+                                                char *s = strerror(errno);
+                                                sprintf(error, "Error %d: %s\n", errno, s);
+                                                write(STDERR_FILENO, error, strlen(error));
+                                                return errno;
+                                            }
                                             int i = 0;
                                             while (new_argv[i] != NULL) {
                                                 free(new_argv[i]);
@@ -167,10 +173,6 @@ int main(int argc, char *argv[]/*, char * envp[]*/) {
                                         }
                                         break;
                                 }
-                                fsize = fget_size(flags & FLAG_BYTES, &new_status, block_size);
-                                char buffer[BUFFER_SIZE];
-                                sprintf(buffer, "%ld""\x9""%s\n", new_fsize, new_path);
-                                write(STDOUT_FILENO, buffer, strlen(buffer));
                             } else {
                                 fsize = fget_size(flags & FLAG_BYTES, &new_status, block_size);
                                 char buffer[BUFFER_SIZE];
@@ -183,8 +185,9 @@ int main(int argc, char *argv[]/*, char * envp[]*/) {
                     }
 
                 }
-
-
+                char buffer[BUFFER_SIZE];
+                sprintf(buffer, "%ld""\x9""%s\n", fsize, path);
+                write(STDOUT_FILENO, buffer, strlen(buffer));
             }
         default:
             break;
