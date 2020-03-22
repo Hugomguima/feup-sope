@@ -88,6 +88,31 @@ int str_isAlpha(const char *str) {
     return 1;
 }
 
+char* str_cat(char *s1, char *s2, int n) {
+    int len1 = (int)strlen(s1);
+    int len2 = (n < (int)strlen(s2)) ? n : (int)strlen(s2);
+
+    char *res = (char*)malloc(sizeof(char) * (len1 + len2 + 1));
+
+    if (res == NULL) {
+        char *error = strerror(errno);
+        write(STDERR_FILENO, error, strlen(error));
+        write(STDERR_FILENO, "\n", 1);
+        return NULL;
+    }
+
+    res = strcpy(res, s1);
+
+    if (res == NULL) {
+        char *error = strerror(errno);
+        write(STDERR_FILENO, error, strlen(error));
+        write(STDERR_FILENO, "\n", 1);
+        return NULL;
+    }
+
+    return strncat(res, s2, len2);
+}
+
 /*----------------------------------------------------------------------------*/
 /*                              FILES FUNCTIONS                               */
 /*----------------------------------------------------------------------------*/
@@ -127,7 +152,7 @@ file_type_t sget_type(const struct stat *pstat) {
         case S_IFIFO:
             return FTYPE_FIFO;
         case S_IFSOCK:
-            return FTYPE_UNKNOWN;
+            return FTYPE_SOCKET;
         default:
             return FTYPE_UNKNOWN;
     }

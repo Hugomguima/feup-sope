@@ -14,7 +14,7 @@ ODIR =./obj
 BDIR =./bin
 
 # Flags
-CFLAGS =-Wall
+CFLAGS =-Wall -Wextra -Werror -Wpedantic -pedantic
 IFLAGS =-I$(IDIR)
 LFLAGS =-L$(LDIR)
 

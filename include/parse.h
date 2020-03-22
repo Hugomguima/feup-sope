@@ -24,14 +24,17 @@
 // Flag error
 #define FLAG_ERR        BIT(8)  /** @brief Error flag */
 
+typedef struct parse_info parse_info_t;
 /**
  * @brief Information to be filled in parse_cmd
  */
-struct parse_info_t {
+struct parse_info {
     char    *path;
     int      block_size;
     int      max_depth;
 };
+
+void init_parse_info(parse_info_t *info);
 
 /**
  * @brief Parses command from command line and returns the activated flags
@@ -41,6 +44,6 @@ struct parse_info_t {
                     Memory for path is allocated in function and should be freed
  * @return          1 byte number containing the flags
  */
-int parse_cmd(int argc, char *argv[], struct parse_info_t *info);
+int parse_cmd(int argc, char *argv[], parse_info_t *info);
 
 #endif // PARSE_H_INCLUDED

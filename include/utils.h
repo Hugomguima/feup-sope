@@ -45,11 +45,19 @@ int str_isDigit(const char *str);
  */
 int str_isAlpha(const char *str);
 
+/**
+ * @brief Concatenates two strings and reallocates space needed
+ * @param s1    String that comes first
+ * @param s2    String that comes second
+ * @param n     Number of characters to concatenate
+ * @return Pointer to new string
+ */
+char* str_cat(char *s1, char *s2, int n);
+
 /*----------------------------------------------------------------------------*/
 /*                              FILES FUNCTIONS                               */
 /*----------------------------------------------------------------------------*/
 
-typedef enum file_type file_type_t;
 /**
  * @brief Enum to store possible file types
  *        File types are obtained using the macros (S_ISREG, S_ISDIR, ...)
@@ -67,6 +75,8 @@ enum file_type {
     FTYPE_SOCKET,
     FTYPE_UNKNOWN
 };
+
+typedef enum file_type file_type_t;
 
 int fget_status(const char *path, struct stat *pstat);
 

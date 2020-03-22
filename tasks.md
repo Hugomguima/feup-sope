@@ -1,7 +1,7 @@
 # Tasks
 
 ## Plan
-- [ ] Receive, process and save command line arguments and environment variables
+- [x] Receive, process and save command line arguments and environment variables
 - [ ] Add registration messages as new features are implemented and validate the correction of both
 - [ ] Start by choosing only files and presenting the desired information (bytes and blocks)
   - [ ] Consider that the `-L` (or `--dereference`) option is active so that it is not necessary to distinguish symbolic links from regular files

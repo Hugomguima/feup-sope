@@ -9,9 +9,55 @@
 
 /* C LIBRARY HEADERS */
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
-int parse_cmd(int argc, char *argv[], struct parse_info_t *info) {
+void init_parse_info(parse_info_t *info) {
+    info->path = NULL;
+    info->block_size = 0;
+    info->max_depth = 0;
+}
+
+char** build_cmd(char *argv0, int flags, parse_info_t *info) {
+
+    int n = 1; // argv size initialized with 1 for argv0
+    for (int i = 0, k = 1; i < 7; i++, k <<= 1) { // ignore path flag
+        n += ((flags & k) != 0); // add space for each flag activated
+    }
+    n = n + 2; // add space for path and for null pointer
+    char **cmd = (char**)malloc(sizeof(char*) * n);
+
+    cmd[0] = strdup(argv0);
+    int i = 1;
+    if (flags & FLAG_LINKS) {
+        cmd[i++] = strdup("--count-links");
+    }
+    if (flags & FLAG_ALL) {
+        cmd[i++] = strdup("--all");
+    }
+    if (flags & FLAG_BYTES) {
+        char num[50];
+        sprintf(num, "%d", info->block_size);
+        cmd[i++] = str_cat("--block-size=", num, strlen(num));
+    }
+    if (flags & FLAG_DEREF) {
+        cmd[i++] = strdup("--dereference");
+    }
+    if (flags & FLAG_SEPDIR) {
+        cmd[i++] = strdup("--separate-dirs");
+    }
+    if (flags & FLAG_MAXDEPTH) {
+        char num[50];
+        sprintf(num, "%d", info->max_depth);
+        cmd[i++] = str_cat("--max-depth=", num, strlen(num));
+    }
+    cmd[i++] = strdup(info->path);
+    cmd[i] = NULL;
+
+    return cmd;
+}
+
+int parse_cmd(int argc, char *argv[], parse_info_t *info) {
     int flags = 0;
 
     if (argv == NULL || info == NULL) {

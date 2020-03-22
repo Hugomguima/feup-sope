@@ -7,6 +7,7 @@
 
 /* C LIBRARY HEADERS */
 #include <stdlib.h>
+#include <stdio.h>
 
 void free_pointers(int n, ...) {
     va_list args;
