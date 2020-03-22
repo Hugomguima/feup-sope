@@ -1,18 +1,18 @@
 /* MAIN HEADER */
 
 /* INCLUDE HEADERS */
-#include "parse.h"
-#include "log.h"
 #include "cleanup.h"
+#include "log.h"
+#include "parse.h"
 
 /* SYSTEM CALLS  HEADERS */
 #include <unistd.h>
 
 /* C LIBRARY HEADERS */
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <errno.h>
 
 #define BUFFER_SIZE 255
 #define READ_PIPE   0
@@ -29,7 +29,8 @@ int main(int argc, char *argv[], char * envp[]) {
         return EINVAL;
     }
 
-    int ret;
+    /*
+    //int ret;
 
     // error | path | max-depth | S | L | B | b | a | l
     int flags;
@@ -41,21 +42,22 @@ int main(int argc, char *argv[], char * envp[]) {
         free_pointers(1, info.path);
         return -1;
     }
-
-    char *path;
-    int block_size;
-
-    /* Write Log
-      init_log();
-      char *a = "hello\n";
-      sleep(3.7);
-      write_log(a);
-      sleep(2.90);
-      write_log(a);
-      close_log();
     */
+
+  //  char *path;
+    //int block_size;
+
+    //Write Log
+    init_log();
+    char *a = "hello\n";
+    sleep(3.7);
+    write_log(a);
+    sleep(2.90);
+    write_log(a);
+    close_log();
+
     // free memory
-    free_pointers(1, info.path);
+    //free_pointers(1, info.path);
 
     return 0;
 }

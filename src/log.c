@@ -5,28 +5,30 @@
 #include <utils.h>
 
 /* SYSTEM CALLS HEADERS */
-#include <unistd.h>
 #include <fcntl.h>
 #include <sys/time.h>
+#include <unistd.h>
 
 /* C LIBRARY HEADERS */
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
 #include <errno.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 struct timeval init_time;
 int file_log;
 
 int init_log() {
+    printf("here");
     if(getenv("LOG_FILENAME") != NULL) { // Write log to LOG_FILENAME
-        file_log = open("LOG_FILENAME" , O_WRONLY | O_CREAT, 0644); //TESTAR ISTO E 0644 VARIAVEL MACRO E VER FLAGS
+        file_log = open("LOG_FILENAME" , O_WRONLY | O_CREAT, DEFAULT_MODE);
     }
     else { // Write log to a pre defined file
-        file_log = open("log.txt", O_WRONLY | O_CREAT, 0644); // CRIAR UMA UMA FOLDER
+        file_log = open("log.txt", O_WRONLY | O_CREAT, DEFAULT_MODE);
     }
 
     if (file_log == -1) { // Test if file is open
+        printf("here");
         printf("%s\n", strerror(errno));
         return 1;
     }
