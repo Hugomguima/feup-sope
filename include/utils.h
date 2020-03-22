@@ -78,9 +78,9 @@ enum file_type {
 
 typedef enum file_type file_type_t;
 
-int fget_status(const char *path, struct stat *pstat);
+int fget_status(const char *path, struct stat *pstat, int deref_sym);
 
-file_type_t fget_type(const char *path);
+file_type_t fget_type(const char *path, int deref_sym);
 
 file_type_t sget_type(const struct stat *pstat);
 
