@@ -119,7 +119,7 @@ int main(int argc, char *argv[]/*, char * envp[]*/) {
                             }
                             break;
                         case FTYPE_DIR:
-                            if (max_depth > 0 || max_depth == -1) {
+                            {
                                 // Build command line arguments
                                 parse_info_t new_info;
                                 new_info.path = new_path;
@@ -173,13 +173,16 @@ int main(int argc, char *argv[]/*, char * envp[]*/) {
                                         }
                                         break;
                                 }
-                            } else {
-                                fsize = fget_size(flags & FLAG_BYTES, &new_status, block_size);
-                                char buffer[BUFFER_SIZE];
-                                sprintf(buffer, "%ld""\x9""%s\n", new_fsize, new_path);
-                                write(STDOUT_FILENO, buffer, strlen(buffer));
                             }
                             break;
+                        case FTYPE_LINK:
+                            {
+                                // Dereference symbolic link if flag is set
+                                char buffer[BUFFER_SIZE];
+                                sprintf(buffer, "%ld""\x9""%s\n", fsize, path);
+                                write(STDOUT_FILENO, buffer, strlen(buffer));
+                           }
+                           break;
                         default:
                             break;
                     }
@@ -188,6 +191,13 @@ int main(int argc, char *argv[]/*, char * envp[]*/) {
                 char buffer[BUFFER_SIZE];
                 sprintf(buffer, "%ld""\x9""%s\n", fsize, path);
                 write(STDOUT_FILENO, buffer, strlen(buffer));
+                if (closedir(dir)) {
+                    char error[BUFFER_SIZE];
+                    char *s = strerror(errno);
+                    sprintf(error, "Error %d: %s\n", errno, s);
+                    write(STDERR_FILENO, error, strlen(error));
+                    return errno;
+                }
             }
             break;
         case FTYPE_LINK:

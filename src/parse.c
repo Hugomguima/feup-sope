@@ -231,7 +231,7 @@ int parse_cmd(int argc, char *argv[], parse_info_t *info) {
 
             struct stat status;
 
-            if (fget_status(argv[i], &status) == -1) {
+            if (fget_status(argv[i], &status, 0) == -1) {
                 flags |= FLAG_ERR;
                 return flags;
             }
