@@ -11,6 +11,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+//temp
+#include <stdlib.h>
+#include <stdio.h>
+
 /*----------------------------------------------------------------------------*/
 /*                              STRING FUNCTIONS                              */
 /*----------------------------------------------------------------------------*/
@@ -117,20 +121,31 @@ char* str_cat(char *s1, char *s2, int n) {
 /*                              FILES FUNCTIONS                               */
 /*----------------------------------------------------------------------------*/
 
-int fget_status(const char *path, struct stat *pstat) {
-    if (stat(path, pstat) == -1) {
-        char *error = strerror(errno);
-        write(STDERR_FILENO, error, strlen(error));
-        write(STDERR_FILENO, "\n", 1);
-        return -1;
+int fget_status(const char *path, struct stat *pstat, int deref_sym) {
+    if(deref_sym) { // If -L is set, then dereference the symbolic link
+        if (stat(path, pstat) == -1) {
+              printf("here");
+              char *error = strerror(errno);
+              write(STDERR_FILENO, error, strlen(error));
+              write(STDERR_FILENO, "\n", 1);
+              return -1;
+        }
+    }
+    else {
+        if (lstat(path, pstat) == -1) {
+              char *error = strerror(errno);
+              write(STDERR_FILENO, error, strlen(error));
+              write(STDERR_FILENO, "\n", 1);
+              return -1;
+        }
     }
     return 0;
 }
 
-file_type_t fget_type(const char *path) {
+file_type_t fget_type(const char *path, int deref_sym) {
     struct stat status;
 
-    if (fget_status(path, &status)) {
+    if (fget_status(path, &status, deref_sym)) {
         return FTYPE_ERROR;
     }
 

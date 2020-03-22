@@ -58,7 +58,7 @@ int main(int argc, char *argv[]/*, char * envp[]*/) {
 
     struct stat status;
 
-    if (fget_status(path, &status)) {
+    if (fget_status(path, &status, flags & FLAG_DEREF)) {
         free_pointers(1, info.path);
         return -1;
     }
@@ -189,11 +189,21 @@ int main(int argc, char *argv[]/*, char * envp[]*/) {
                 sprintf(buffer, "%ld""\x9""%s\n", fsize, path);
                 write(STDOUT_FILENO, buffer, strlen(buffer));
             }
+            break;
+        case FTYPE_LINK:
+            {
+                // Dereference symbolic link if flag is set
+                char buffer[BUFFER_SIZE];
+                sprintf(buffer, "%ld""\x9""%s\n", fsize, path);
+                write(STDOUT_FILENO, buffer, strlen(buffer));
+           }
+           break;
         default:
             break;
     }
 
     //Write Log
+    /*
     init_log();
     char *a = "hello\n";
     sleep(3.7);
@@ -201,7 +211,7 @@ int main(int argc, char *argv[]/*, char * envp[]*/) {
     sleep(2.90);
     write_log(a);
     close_log();
-
+    */
     // free memory
     free_pointers(1, info.path);
 
