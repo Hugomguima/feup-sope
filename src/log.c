@@ -19,21 +19,22 @@ struct timeval init_time;
 int file_log;
 
 int init_log() {
-    printf("here");
     if(getenv("LOG_FILENAME") != NULL) { // Write log to LOG_FILENAME
         file_log = open("LOG_FILENAME" , O_WRONLY | O_CREAT, DEFAULT_MODE);
     }
     else { // Write log to a pre defined file
-        file_log = open("log.txt", O_WRONLY | O_CREAT, DEFAULT_MODE);
+        struct stat st;
+        if (stat("./log", &st) == -1) {
+            mkdir("./log", 0700);
+        }
+        file_log = open("./log/log.txt", O_WRONLY | O_CREAT, DEFAULT_MODE);
     }
 
     if (file_log == -1) { // Test if file is open
-        printf("here");
         printf("%s\n", strerror(errno));
         return 1;
     }
     gettimeofday(&init_time, 0);
-
     // Write the first line of log
     char *str = "instant – pid – action – info \n";
     write(file_log, str, strlen(str));

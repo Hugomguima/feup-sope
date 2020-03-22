@@ -29,7 +29,6 @@ int main(int argc, char *argv[], char * envp[]) {
         return EINVAL;
     }
 
-    /*
     //int ret;
 
     // error | path | max-depth | S | L | B | b | a | l
@@ -42,10 +41,9 @@ int main(int argc, char *argv[], char * envp[]) {
         free_pointers(1, info.path);
         return -1;
     }
-    */
 
-  //  char *path;
-    //int block_size;
+    char *path;
+    int block_size;
 
     //Write Log
     init_log();
@@ -57,7 +55,7 @@ int main(int argc, char *argv[], char * envp[]) {
     close_log();
 
     // free memory
-    //free_pointers(1, info.path);
+    free_pointers(1, info.path);
 
     return 0;
 }

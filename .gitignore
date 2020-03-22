@@ -1,4 +1,5 @@
-# ---- Ignore objects, binaries and libraries
+# ---- Ignore objects, binaries, libraries and log files
 lib/
 obj/
 bin/
+log/
