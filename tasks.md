@@ -3,12 +3,12 @@
 ## Plan
 - [x] Receive, process and save command line arguments and environment variables
 - [ ] Add registration messages as new features are implemented and validate the correction of both
-- [ ] Start by choosing only files and presenting the desired information (bytes and blocks)
+- [x] Start by choosing only files and presenting the desired information (bytes and blocks)
   - [ ] Consider that the `-L` (or `--dereference`) option is active so that it is not necessary to distinguish symbolic links from regular files
 - [ ] Distinguish between files and symbolic links and present different results depending on the `-L` option
 - [ ] Consider entries that are directories, but limit the analysis to one level (`--max-depth=1`)
-- [ ] Create a new process by subdirectory and try to pass the correct arguments to it
-  - [ ] The arguments will be the same except for the path (path / entry) and, eventually, the maximum allowed depth level (`--max depth=N-1`)
+- [x] Create a new process by subdirectory and try to pass the correct arguments to it
+  - [x] The arguments will be the same except for the path (path / entry) and, eventually, the maximum allowed depth level (`--max depth=N-1`)
   - [ ] Assume that the `-S` (or `--separate-dirs`) option is active so that it is not necessary to cumulatively consider the size of the subdirectories
 - [ ] Create pipes to communicate the size of a given subdirectory to the parent process and thus correctly present cumulative results, including for subdirectories
 
