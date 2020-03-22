@@ -1,10 +1,10 @@
 /* MAIN HEADER */
 
 /* INCLUDE HEADERS */
+#include "cleanup.h"
 #include "parse.h"
 #include "utils.h"
 #include "log.h"
-#include "cleanup.h"
 
 /* SYSTEM CALLS  HEADERS */
 #include <sys/types.h>
@@ -13,11 +13,11 @@
 #include <unistd.h>
 
 /* C LIBRARY HEADERS */
+#include <dirent.h>
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <dirent.h>
-#include <errno.h>
 
 #define BUFFER_SIZE 256
 #define READ_PIPE   0
@@ -121,15 +121,15 @@ int main(int argc, char *argv[]/*, char * envp[]*/) {
             break;
     }
 
-    /* Write Log
-      init_log();
-      char *a = "hello\n";
-      sleep(3.7);
-      write_log(a);
-      sleep(2.90);
-      write_log(a);
-      close_log();
-    */
+    //Write Log
+    init_log();
+    char *a = "hello\n";
+    sleep(3.7);
+    write_log(a);
+    sleep(2.90);
+    write_log(a);
+    close_log();
+
     // free memory
     free_pointers(1, info.path);
 
