@@ -152,7 +152,7 @@ int main(int argc, char *argv[]/*, char * envp[]*/) {
                                         return 0; // exit child
                                     default:
                                         {
-                                            if (wait(&return_status) == -1) {
+                                            if (waitpid(pid, &return_status, 0) == -1) {
                                                 char error[BUFFER_SIZE];
                                                 char *s = strerror(errno);
                                                 sprintf(error, "Error %d: %s\n", errno, s);
