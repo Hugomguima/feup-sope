@@ -23,6 +23,18 @@
  */
 int str_find(const char *str, const char *pattern, int pos);
 
+#define MODE_DELETE     0   /** @brief Mode for trim functions, deletes all trimmed characters */
+#define MODE_RMDUP      1   /** @brief Mode for trim functions, deletes all duplicated trimmed characters leaving only one */
+
+/**
+ * @brief Trims the string on the right side
+ * @param   str         Pointer to string to be trimmed
+ * @param   trimmed     Character to trim
+ * @param   mode        Trim mode, see macros MODE_DELETE, MODE_RMDUP
+ * @return  0 upon sucess, -1 if error occurs
+ */
+int rtrim(char *str, char trimmed, int mode);
+
 /**
  * @brief Splits the string by its delimiters
  * @param   str         Pointer to string to be splitted

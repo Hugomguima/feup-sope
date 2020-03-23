@@ -237,6 +237,11 @@ int parse_cmd(int argc, char *argv[], parse_info_t *info) {
             }
 
             info->path = strdup(argv[i]);
+            if (rtrim(info->path, '/', MODE_RMDUP)) {
+                write(STDERR_FILENO, "Error trimming path\n", 21);
+                flags |= FLAG_ERR;
+                return flags;
+            }
             flags |= FLAG_PATH;
         }
     }

@@ -78,6 +78,8 @@ int main(int argc, char *argv[]/*, char * envp[]*/) {
             {
                 DIR *dir;
 
+                fsize = 0;
+
                 if ((dir = opendir(path)) == NULL) {
                     char error[BUFFER_SIZE];
                     char *s = strerror(errno);
@@ -99,7 +101,7 @@ int main(int argc, char *argv[]/*, char * envp[]*/) {
 
                     struct stat new_status;
 
-                    if (stat(new_path, &new_status) == -1) {
+                    if (fget_status(new_path, &new_status, flags & FLAG_DEREF)) {
                         char error[BUFFER_SIZE];
                         char *s = strerror(errno);
                         sprintf(error, "Error %d: %s\n", errno, s);
@@ -111,8 +113,9 @@ int main(int argc, char *argv[]/*, char * envp[]*/) {
                     long new_fsize;
                     switch (new_type) {
                         case FTYPE_REG:
+                            new_fsize = fget_size(flags & FLAG_BYTES, &new_status, block_size);
+                            fsize += new_fsize;
                             if (flags & FLAG_ALL) {
-                                new_fsize = fget_size(flags & FLAG_BYTES, &new_status, block_size);
                                 char buffer[BUFFER_SIZE];
                                 sprintf(buffer, "%ld""\x9""%s\n", new_fsize, new_path);
                                 write(STDOUT_FILENO, buffer, strlen(buffer));
@@ -177,10 +180,13 @@ int main(int argc, char *argv[]/*, char * envp[]*/) {
                             break;
                         case FTYPE_LINK:
                             {
-                                // Dereference symbolic link if flag is set
-                                char buffer[BUFFER_SIZE];
-                                sprintf(buffer, "%ld""\x9""%s\n", fsize, path);
-                                write(STDOUT_FILENO, buffer, strlen(buffer));
+                                new_fsize = fget_size(flags & FLAG_BYTES, &new_status, block_size);
+                                fsize += new_fsize;
+                                if (flags & FLAG_ALL) {
+                                    char buffer[BUFFER_SIZE];
+                                    sprintf(buffer, "%ld""\x9""%s\n", new_fsize, new_path);
+                                    write(STDOUT_FILENO, buffer, strlen(buffer));
+                                }
                            }
                            break;
                         default:

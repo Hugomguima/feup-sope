@@ -37,6 +37,22 @@ int str_find(const char *str, const char *pattern, int pos) {
     return -1;
 }
 
+int rtrim(char *str, char trimmed, int mode) {
+    if (str == NULL || trimmed == 0) return -1;
+    if (mode != MODE_DELETE && mode != MODE_RMDUP) return -1;
+
+    int end = strlen(str) - 1;
+
+    while (end >= 0 && str[end] == trimmed) end--;
+
+    if (mode == MODE_RMDUP && end != (int)strlen(str) - 1) {
+        str[end + 2] = 0;
+    } else {
+        str[end + 1] = 0;
+    }
+    return 0;
+}
+
 char** str_split(const char *str, const char *delim) {
     if (str == NULL || delim == NULL) return NULL;
 
