@@ -133,7 +133,7 @@ int main(int argc, char *argv[]/*, char * envp[]*/) {
                         case FTYPE_REG:
                             new_fsize = fget_size(flags & FLAG_BYTES, &new_status, block_size);
                             fsize += new_fsize;
-                            if (flags & FLAG_ALL) {
+                            if ((flags & FLAG_ALL) && ((flags & FLAG_MAXDEPTH) == 0 || max_depth > 0)) {
                                 char buffer[BUFFER_SIZE];
                                 sprintf(buffer, "%ld""\x9""%s\n", new_fsize, new_path);
                                 write(STDOUT_FILENO, buffer, strlen(buffer));
@@ -219,7 +219,7 @@ int main(int argc, char *argv[]/*, char * envp[]*/) {
                             {
                                 new_fsize = fget_size(flags & FLAG_BYTES, &new_status, block_size);
                                 fsize += new_fsize;
-                                if (flags & FLAG_ALL) {
+                                if ((flags & FLAG_ALL) && ((flags & FLAG_MAXDEPTH) == 0 || max_depth > 0)) {
                                     char buffer[BUFFER_SIZE];
                                     sprintf(buffer, "%ld""\x9""%s\n", new_fsize, new_path);
                                     write(STDOUT_FILENO, buffer, strlen(buffer));
@@ -231,9 +231,11 @@ int main(int argc, char *argv[]/*, char * envp[]*/) {
                     }
 
                 }
-                char buffer[BUFFER_SIZE];
-                sprintf(buffer, "%ld""\x9""%s\n", fsize, path);
-                write(STDOUT_FILENO, buffer, strlen(buffer));
+                if ((flags & FLAG_MAXDEPTH) == 0 || max_depth >= 0) {
+                    char buffer[BUFFER_SIZE];
+                    sprintf(buffer, "%ld""\x9""%s\n", fsize, path);
+                    write(STDOUT_FILENO, buffer, strlen(buffer));
+                }
 
                 if (subprocess) {
                     if (write(ppipe_write, &fsize, sizeof(int)) == -1) {

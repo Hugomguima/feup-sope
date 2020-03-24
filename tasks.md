@@ -6,7 +6,7 @@
 - [x] Start by choosing only files and presenting the desired information (bytes and blocks)
   - [x] Consider that the `-L` (or `--dereference`) option is active so that it is not necessary to distinguish symbolic links from regular files
 - [x] Distinguish between files and symbolic links and present different results depending on the `-L` option
-- [ ] Consider entries that are directories, but limit the analysis to one level (`--max-depth=1`)
+- [x] Consider entries that are directories, but limit the analysis to one level (`--max-depth=1`)
 - [x] Create a new process by subdirectory and try to pass the correct arguments to it
   - [x] The arguments will be the same except for the path (path / entry) and, eventually, the maximum allowed depth level (`--max depth=N-1`)
   - [x] Assume that the `-S` (or `--separate-dirs`) option is active so that it is not necessary to cumulatively consider the size of the subdirectories
@@ -18,7 +18,7 @@
 - [x] does not follow symbolic links
 - [ ] counts each file only once
 - [x] cumulatively displays the size of included subdirectories and files
-- [ ] does not restrict the depth levels in the directory structure
+- [x] does not restrict the depth levels in the directory structure
 
 ## Architectural requirements
 - Each process
