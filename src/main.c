@@ -23,15 +23,17 @@
 #define READ_PIPE   0
 #define WRITE_PIPE  1
 
+int error_sys(char *error_msg) {
+    char error[BUFFER_SIZE];
+    sprintf(error, "%s\nError %d: %s\n", error_msg, errno, strerror(errno));
+    write(STDERR_FILENO, error, strlen(error));
+    return errno;
+}
+
 int main(int argc, char *argv[]/*, char * envp[]*/) {
-    if (argc < 2 || argc > 9) {
-        char error[BUFFER_SIZE];
-        char *s = strerror(EINVAL);
-        sprintf(error, "Error %d: %s\n"
-                       "Program usage: simpledu -l [path] [-a] [-b] [-B size] [-L] [-S] [--max-depth=N]\n",
-                EINVAL, s);
-        write(STDERR_FILENO, error, strlen(error));
-        return EINVAL;
+    if (argc < 2) {
+        errno = EINVAL;
+        return error_sys("Program usage: simpledu -l [path] [-a] [-b] [-B size] [-L] [-S] [--max-depth=N]");
     }
 
     //int ret;
@@ -81,11 +83,7 @@ int main(int argc, char *argv[]/*, char * envp[]*/) {
                 fsize = 0;
 
                 if ((dir = opendir(path)) == NULL) {
-                    char error[BUFFER_SIZE];
-                    char *s = strerror(errno);
-                    sprintf(error, "Error %d: %s\n", errno, s);
-                    write(STDERR_FILENO, error, strlen(error));
-                    return errno;
+                    return error_sys("opendir error");
                 }
 
                 struct dirent *direntp;
@@ -102,11 +100,7 @@ int main(int argc, char *argv[]/*, char * envp[]*/) {
                     struct stat new_status;
 
                     if (fget_status(new_path, &new_status, flags & FLAG_DEREF)) {
-                        char error[BUFFER_SIZE];
-                        char *s = strerror(errno);
-                        sprintf(error, "Error %d: %s\n", errno, s);
-                        write(STDERR_FILENO, error, strlen(error));
-                        return errno;
+                        return error_sys("fget_status error on reading directory's file status");
                     }
 
                     file_type_t new_type = sget_type(&new_status);
@@ -137,30 +131,16 @@ int main(int argc, char *argv[]/*, char * envp[]*/) {
 
                                 switch (pid) {
                                     case -1:
-                                        {
-                                            char error[BUFFER_SIZE];
-                                            char *s = strerror(errno);
-                                            sprintf(error, "Error %d: %s\n", errno, s);
-                                            write(STDERR_FILENO, error, strlen(error));
-                                            return errno;
-                                        }
+                                        return error_sys("fork error");
                                     case 0:
                                         if (execv(argv[0], new_argv) == -1) {
-                                            char error[BUFFER_SIZE];
-                                            char *s = strerror(errno);
-                                            sprintf(error, "Error %d: %s\n", errno, s);
-                                            write(STDERR_FILENO, error, strlen(error));
-                                            return errno;
+                                            return error_sys("execv error");
                                         }
                                         return 0; // exit child
                                     default:
                                         {
                                             if (waitpid(pid, &return_status, 0) == -1) {
-                                                char error[BUFFER_SIZE];
-                                                char *s = strerror(errno);
-                                                sprintf(error, "Error %d: %s\n", errno, s);
-                                                write(STDERR_FILENO, error, strlen(error));
-                                                return errno;
+                                                return error_sys("waitpid error");
                                             }
                                             int i = 0;
                                             while (new_argv[i] != NULL) {
@@ -198,11 +178,7 @@ int main(int argc, char *argv[]/*, char * envp[]*/) {
                 sprintf(buffer, "%ld""\x9""%s\n", fsize, path);
                 write(STDOUT_FILENO, buffer, strlen(buffer));
                 if (closedir(dir)) {
-                    char error[BUFFER_SIZE];
-                    char *s = strerror(errno);
-                    sprintf(error, "Error %d: %s\n", errno, s);
-                    write(STDERR_FILENO, error, strlen(error));
-                    return errno;
+                    return error_sys("closedir");
                 }
             }
             break;
