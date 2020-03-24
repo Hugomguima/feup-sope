@@ -36,8 +36,6 @@ int main(int argc, char *argv[]/*, char * envp[]*/) {
         return error_sys("Program usage: simpledu -l [path] [-a] [-b] [-B size] [-L] [-S] [--max-depth=N]");
     }
 
-    //int ret;
-
     // error | path | max-depth | S | L | B | b | a | l
     int flags;
 
@@ -67,6 +65,32 @@ int main(int argc, char *argv[]/*, char * envp[]*/) {
 
     file_type_t ftype = sget_type(&status);
     long fsize = fget_size(flags & FLAG_BYTES, &status, block_size);
+
+    int subprocess = 0; // indicates if this is a subprocess or the main process
+    int ppipe_write;    // pipe to write to parent in case of subprocess
+
+    {
+        struct stat stdout_status, stdin_status;
+
+        if (fstat(STDOUT_FILENO, &stdout_status) || fstat(STDIN_FILENO, &stdin_status)) {
+            return error_sys("fstat error on reading stdin and stdout status");
+        }
+
+        if (sget_type(&stdout_status) == FTYPE_FIFO && sget_type(&stdin_status) == FTYPE_FIFO) {
+            int std[2];
+            if (read(STDIN_FILENO, std, sizeof(int) * 2) == -1) {
+                return error_sys("read error upon reading pipe to obtain stdout and stdin");
+            }
+            if ((ppipe_write = dup(STDOUT_FILENO)) == -1) {
+                return error_sys("dup error upon copying pipe descriptor");
+            }
+            if (dup2(std[READ_PIPE], STDIN_FILENO) == -1 || dup2(std[WRITE_PIPE], STDOUT_FILENO) == -1) {
+                return error_sys("dup2 error upon restoring stdin and stdout");
+            }
+
+            subprocess = 1;
+        }
+    }
 
     switch (ftype) {
         case FTYPE_REG:
@@ -125,23 +149,50 @@ int main(int argc, char *argv[]/*, char * envp[]*/) {
 
                                 char **new_argv = build_argv(argv[0], flags, &new_info);
 
-                                pid_t pid = fork();
+                                int pipe_ctosp[2];  // Pipe child to subprocess
+                                int pipe_ctop[2];   // Pipe child to parent
 
                                 int return_status;
+
+                                if (pipe(pipe_ctosp) || pipe(pipe_ctop)) {
+                                    return error_sys("pipe error");
+                                }
+
+                                pid_t pid = fork();
 
                                 switch (pid) {
                                     case -1:
                                         return error_sys("fork error");
                                     case 0:
-                                        if (execv(argv[0], new_argv) == -1) {
-                                            return error_sys("execv error");
+                                        {
+                                            int std[2];
+                                            if ((std[READ_PIPE] = dup(STDIN_FILENO)) == -1 || (std[WRITE_PIPE] = dup(STDOUT_FILENO)) == -1) {
+                                                return error_sys("dup error upon copying stdin and stdout descriptors");
+                                            }
+
+                                            if (write(pipe_ctosp[WRITE_PIPE], std, sizeof(int) * 2) == -1) {
+                                                return error_sys("write error to subprocess connection pipe");
+                                            }
+
+                                            if (close(pipe_ctop[READ_PIPE]) || close(pipe_ctosp[WRITE_PIPE])) {
+                                                return error_sys("close error upon closing pipe");
+                                            }
+
+                                            if (dup2(pipe_ctop[WRITE_PIPE], STDOUT_FILENO) == -1 || dup2(pipe_ctosp[READ_PIPE], STDIN_FILENO) == -1) {
+                                                return error_sys("dup2 error upon redefining descriptors pointed by stdin and stdout");
+                                            }
+
+                                            if (execv(argv[0], new_argv) == -1) {
+                                                return error_sys("execv error");
+                                            }
                                         }
-                                        return 0; // exit child
+                                        break;
                                     default:
                                         {
                                             if (waitpid(pid, &return_status, 0) == -1) {
                                                 return error_sys("waitpid error");
                                             }
+
                                             int i = 0;
                                             while (new_argv[i] != NULL) {
                                                 free(new_argv[i]);
@@ -153,6 +204,12 @@ int main(int argc, char *argv[]/*, char * envp[]*/) {
                                                 write(STDERR_FILENO, "error on child\n", 16);
                                                 return -1;
                                             }
+
+                                            int subdir_size = 0;
+                                            if (read(pipe_ctop[READ_PIPE], &subdir_size, sizeof(int)) == -1) {
+                                                return error_sys("write error upon reading from child connection pipe");
+                                            }
+                                            fsize += (flags & FLAG_SEPDIR) ? 0 : subdir_size;
                                         }
                                         break;
                                 }
@@ -177,6 +234,13 @@ int main(int argc, char *argv[]/*, char * envp[]*/) {
                 char buffer[BUFFER_SIZE];
                 sprintf(buffer, "%ld""\x9""%s\n", fsize, path);
                 write(STDOUT_FILENO, buffer, strlen(buffer));
+
+                if (subprocess) {
+                    if (write(ppipe_write, &fsize, sizeof(int)) == -1) {
+                        return error_sys("write error upong writing to parent connection pipe");
+                    }
+                }
+
                 if (closedir(dir)) {
                     return error_sys("closedir");
                 }
@@ -194,16 +258,7 @@ int main(int argc, char *argv[]/*, char * envp[]*/) {
             break;
     }
 
-    //Write Log
-    /*
-    init_log();
-    char *a = "hello\n";
-    sleep(3.7);
-    write_log(a);
-    sleep(2.90);
-    write_log(a);
-    close_log();
-    */
+
     // free memory
     free_pointers(1, info.path);
 
