@@ -11,10 +11,11 @@ int init_log();
 
 /**
  * @brief               Write a line to log
- * @param logString     String to put in log
+ * @param log_action    Description of type of event
+ * @param log_info      Additional information about any action
  * @return              0 uppon sucess or 1 otherwhise
  */
-int write_log(char *logString);
+int write_log(char *log_action, char *log_info);
 
 /**
  * @brief           Close log file

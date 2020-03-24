@@ -34,6 +34,7 @@ int init_log() {
         printf("%s\n", strerror(errno));
         return 1;
     }
+
     gettimeofday(&init_time, 0);
     // Write the first line of log
     char *str = "instant – pid – action – info \n";
@@ -42,18 +43,16 @@ int init_log() {
     return 0;
 }
 
-int write_log(char *log_string) {
+int write_log(char *log_action, char *log_info) {
     struct timeval current_time;
     gettimeofday(&current_time, 0);
-
-    // Write time
-    char tmp[12];
     long double elapsed_time = (current_time.tv_usec - init_time.tv_usec) / 1000.0 + (current_time.tv_sec - init_time.tv_sec) * 1000.0;
-    sprintf(tmp,"%11Lf", elapsed_time);
-    write(file_log, tmp, sizeof(tmp));
 
-    // Write action and info
-    write(file_log, log_string, strlen(log_string));
+    // Write to log
+    char buffer[256];
+    sprintf(buffer,"%Lf""\x9""%d""\x9""%s""\x9""%s\n", elapsed_time, getppid(), log_action, log_info);
+    write(file_log, buffer, strlen(buffer));
+
     return 0;
 }
 
@@ -62,5 +61,6 @@ int close_log() {
         printf("%s", strerror(errno));
         return 1;
     }
+
     return 0;
 }
