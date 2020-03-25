@@ -63,7 +63,7 @@ int main(int argc, char *argv[]/*, char * envp[]*/) {
 
             subprocess = 1;
         } else {
-            /* init log*/
+            init_log(); // Init log
         }
     }
 
@@ -102,6 +102,7 @@ int main(int argc, char *argv[]/*, char * envp[]*/) {
             {
                 char buffer[BUFFER_SIZE];
                 sprintf(buffer, "%ld""\x9""%s\n", fsize, path);
+                write_log("ENTRY", buffer);
                 write(STDOUT_FILENO, buffer, strlen(buffer));
             }
             break;
@@ -141,7 +142,9 @@ int main(int argc, char *argv[]/*, char * envp[]*/) {
                             if ((flags & FLAG_ALL) && ((flags & FLAG_MAXDEPTH) == 0 || max_depth > 0)) {
                                 char buffer[BUFFER_SIZE];
                                 sprintf(buffer, "%ld""\x9""%s\n", new_fsize, new_path);
+                                write_log("ENTRY", buffer);
                                 write(STDOUT_FILENO, buffer, strlen(buffer));
+
                             }
                             break;
                         case FTYPE_DIR:
@@ -227,6 +230,7 @@ int main(int argc, char *argv[]/*, char * envp[]*/) {
                                 if ((flags & FLAG_ALL) && ((flags & FLAG_MAXDEPTH) == 0 || max_depth > 0)) {
                                     char buffer[BUFFER_SIZE];
                                     sprintf(buffer, "%ld""\x9""%s\n", new_fsize, new_path);
+                                    write_log("ENTRY", buffer);
                                     write(STDOUT_FILENO, buffer, strlen(buffer));
                                 }
                            }
@@ -239,6 +243,7 @@ int main(int argc, char *argv[]/*, char * envp[]*/) {
                 if ((flags & FLAG_MAXDEPTH) == 0 || max_depth >= 0) {
                     char buffer[BUFFER_SIZE];
                     sprintf(buffer, "%ld""\x9""%s\n", fsize, path);
+                    write_log("ENTRY", buffer);
                     write(STDOUT_FILENO, buffer, strlen(buffer));
                 }
 
@@ -258,6 +263,7 @@ int main(int argc, char *argv[]/*, char * envp[]*/) {
                 // Dereference symbolic link if flag is set
                 char buffer[BUFFER_SIZE];
                 sprintf(buffer, "%ld""\x9""%s\n", fsize, path);
+                write_log("ENTRY", buffer);
                 write(STDOUT_FILENO, buffer, strlen(buffer));
            }
            break;
@@ -269,5 +275,11 @@ int main(int argc, char *argv[]/*, char * envp[]*/) {
     // free memory
     free_pointers(1, info.path);
 
+    // Close log file
+    if(subprocess == 0) {
+      write_log("FINISH", "FINISH");
+      printf("Text\n");
+      close_log();
+    }
     return 0;
 }

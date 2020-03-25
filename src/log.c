@@ -19,15 +19,16 @@ struct timeval init_time;
 int file_log;
 
 int init_log() {
+    printf("Here\n");
     if(getenv("LOG_FILENAME") != NULL) { // Write log to LOG_FILENAME
-        file_log = open("LOG_FILENAME" , O_WRONLY | O_CREAT, DEFAULT_MODE);
+        file_log = open("LOG_FILENAME" , O_WRONLY | O_CREAT | O_TRUNC, DEFAULT_MODE);
     }
     else { // Write log to a pre defined file
         struct stat st;
         if (stat("./log", &st) == -1) {
             mkdir("./log", 0700);
         }
-        file_log = open("./log/log.txt", O_WRONLY | O_CREAT, DEFAULT_MODE);
+        file_log = open("./log/log.txt", O_WRONLY | O_CREAT | O_TRUNC, DEFAULT_MODE);
     }
 
     if (file_log == -1) { // Test if file is open
@@ -49,8 +50,9 @@ int write_log(char *log_action, char *log_info) {
     long double elapsed_time = (current_time.tv_usec - init_time.tv_usec) / 1000.0 + (current_time.tv_sec - init_time.tv_sec) * 1000.0;
 
     // Write to log
+    printf("here\n");
     char buffer[256];
-    sprintf(buffer,"%Lf""\x9""%d""\x9""%s""\x9""%s\n", elapsed_time, getppid(), log_action, log_info);
+    sprintf(buffer,"%.2Lf""\x9""%d""\x9""%s""\x9""%s\n", elapsed_time, getppid(), log_action, log_info);
     write(file_log, buffer, strlen(buffer));
 
     return 0;
