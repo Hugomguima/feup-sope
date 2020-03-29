@@ -5,9 +5,13 @@
 
 /**
  * @brief           Init the log
- * @return          0 uppon sucess or 1 otherwhise
+ * @return          File descriptor uppon sucess or 1 otherwise
  */
 int init_log();
+
+/**
+  */
+int set_log_descriptor(int descriptor);
 
 /**
  * @brief               Write a line to log

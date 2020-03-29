@@ -41,6 +41,11 @@ int init_log() {
     char *str = "instant – pid – action – info \n";
     write(file_log, str, strlen(str));
 
+    return file_log;
+}
+
+int set_log_descriptor(int descriptor) {
+    file_log = descriptor;
     return 0;
 }
 
@@ -50,7 +55,6 @@ int write_log(char *log_action, char *log_info) {
     long double elapsed_time = (current_time.tv_usec - init_time.tv_usec) / 1000.0 + (current_time.tv_sec - init_time.tv_sec) * 1000.0;
 
     // Write to log
-    printf("here\n");
     char buffer[256];
     sprintf(buffer,"%.2Lf""\x9""%d""\x9""%s""\x9""%s\n", elapsed_time, getppid(), log_action, log_info);
     write(file_log, buffer, strlen(buffer));
