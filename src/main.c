@@ -24,8 +24,6 @@
 #define WRITE_PIPE  1
 #define LOG_FILE    2
 
-
-
 int error_sys(char *error_msg) {
     char error[BUFFER_SIZE];
     sprintf(error, "%s\nError %d: %s\n", error_msg, errno, strerror(errno));
@@ -68,8 +66,16 @@ int main(int argc, char *argv[]/*, char * envp[]*/) {
 
             subprocess = 1;
         } else {
-            printf("HERE\n\n\n\n\n\n\n\n");
             log_file_fd = init_log();
+
+            // Write commands passed as arguments
+            char buffer[BUFFER_SIZE];
+            for(int i = 0; i < argc; i++) {
+                strncat(buffer, argv[i], sizeof(char) * strlen(argv[i]));
+                strncat(buffer, " ", 1);
+            }
+            strncat(buffer, "\n", 1);
+            write_log("CREATE", buffer);
           }
     }
 
@@ -183,11 +189,9 @@ int main(int argc, char *argv[]/*, char * envp[]*/) {
                                             if ((std[READ_PIPE] = dup(STDIN_FILENO)) == -1 || (std[WRITE_PIPE] = dup(STDOUT_FILENO)) == -1 || (std[LOG_FILE] = dup(log_file_fd)) == -1) {
                                                 return error_sys("dup error upon copying stdin and stdout descriptors");
                                             }
-
-                                            if (write(pipe_ctosp[WRITE_PIPE], std, sizeof(int) * 3) == -1) {
-                                                return error_sys("write error to subprocess connection pipe");
+                                            if (write(pipe_ctosp[WRITE_PIPE], std, sizeof(int) * 3) == -1 || write_log_array("SEND_PIPE", std, 3)) {
+                                                return error_sys("write error to subprocess connection pipe or writing log");
                                             }
-
                                             if (close(pipe_ctop[READ_PIPE]) || close(pipe_ctosp[WRITE_PIPE])) {
                                                 return error_sys("close error upon closing pipe");
                                             }
@@ -253,7 +257,7 @@ int main(int argc, char *argv[]/*, char * envp[]*/) {
                 }
 
                 if (subprocess) {
-                    if (write(ppipe_write, &fsize, sizeof(int)) == -1) {
+                    if (write(ppipe_write, &fsize, sizeof(int)) == -1 || write_log_int("SEND_PIPE", fsize)) {
                         return error_sys("write error upong writing to parent connection pipe");
                     }
                 }
@@ -282,7 +286,6 @@ int main(int argc, char *argv[]/*, char * envp[]*/) {
 
     // Close log file
     if(subprocess == 0) {
-      write_log("FINISH", "FINISH");
       close_log();
     }
     return 0;

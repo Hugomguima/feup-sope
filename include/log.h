@@ -21,6 +21,10 @@ int set_log_descriptor(int descriptor);
  */
 int write_log(char *log_action, char *log_info);
 
+int write_log_array(char *log_action, int *info, int size);
+
+int write_log_int(char *log_action, long info);
+
 /**
  * @brief           Close log file
  * @return          0 uppon sucess or 1 otherwhise
