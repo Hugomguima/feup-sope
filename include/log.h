@@ -10,20 +10,41 @@
 int init_log();
 
 /**
+  * @brief           Set the descriptor of log file in child processes
+  * @int             file descriptor
   */
 int set_log_descriptor(int descriptor);
 
 /**
- * @brief               Write a line to log
+  * @brief
+  * @return             Return the elapsed time since program started
+  */
+long double elapsed_time();
+
+/**
+ * @brief               Write an action to log
  * @param log_action    Description of type of event
  * @param log_info      Additional information about any action
  * @return              0 uppon sucess or 1 otherwhise
  */
 int write_log(char *log_action, char *log_info);
 
+/**
+ * @brief               Write an action to log
+ * @param log_action    Description of type of event
+ * @param info          int array to write in log
+ * @param size          size of array info
+ * @return              0 uppon sucess or 1 otherwhise
+ */
 int write_log_array(char *log_action, int *info, int size);
 
-int write_log_int(char *log_action, long info);
+/**
+ * @brief               Write an action to log
+ * @param log_action    Description of type of event
+ * @param info          long int to write in log
+ * @return              0 uppon sucess or 1 otherwhise
+ */
+int write_log_int(char *log_action, long log_info);
 
 /**
  * @brief           Close log file

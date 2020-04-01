@@ -37,6 +37,7 @@ int init_log() {
     }
 
     gettimeofday(&init_time, 0);
+
     // Write the first line of log
     char *str = "instant/pid/action/info \n";
     write(file_log, str, strlen(str));
@@ -49,24 +50,23 @@ int set_log_descriptor(int descriptor) {
     return 0;
 }
 
+long double elapsed_time() {
+  struct timeval current_time;
+  gettimeofday(&current_time, 0);
+  return (current_time.tv_usec - init_time.tv_usec) / 1000.0 + (current_time.tv_sec - init_time.tv_sec) * 1000.0;
+}
+
 int write_log(char *log_action, char *log_info) {
-    struct timeval current_time;
-    gettimeofday(&current_time, 0);
-    long double elapsed_time = (current_time.tv_usec - init_time.tv_usec) / 1000.0 + (current_time.tv_sec - init_time.tv_sec) * 1000.0;
-
-    // Write to log
     char buffer[256];
-    sprintf(buffer,"%.2Lf/%d/%s/%s", elapsed_time, getppid(), log_action, log_info);
-    write(file_log, buffer, strlen(buffer));
+    sprintf(buffer,"%.2Lf/%d/%s/%s", elapsed_time(), getppid(), log_action, log_info);
 
+    if(write(file_log, buffer, strlen(buffer)) == -1) {
+        return 1;
+    }
     return 0;
 }
 
 int write_log_array(char *log_action, int *info, int size) {
-    struct timeval current_time;
-    gettimeofday(&current_time, 0);
-    long double elapsed_time = (current_time.tv_usec - init_time.tv_usec) / 1000.0 + (current_time.tv_sec - init_time.tv_sec) * 1000.0;
-
     char to_char[256];
     char *log_info = malloc(256);
     for(int i = 0; i < size; i++) {
@@ -75,33 +75,29 @@ int write_log_array(char *log_action, int *info, int size) {
     }
 
     char buffer[256];
-    sprintf(buffer,"%.2Lf/%d/%s/%s\n", elapsed_time, getppid(), log_action, log_info);
-    write(file_log, buffer, strlen(buffer));
-
+    sprintf(buffer,"%.2Lf/%d/%s/%s\n", elapsed_time(), getppid(), log_action, log_info);
+    if(write(file_log, buffer, strlen(buffer)) == -1) {
+        free(log_info);
+        return 1;
+    }
     free(log_info);
 
     return 0;
 }
 
-int write_log_int(char *log_action, long info) {
-  struct timeval current_time;
-  gettimeofday(&current_time, 0);
-  long double elapsed_time = (current_time.tv_usec - init_time.tv_usec) / 1000.0 + (current_time.tv_sec - init_time.tv_sec) * 1000.0;
-
-  char buffer[256];
-  sprintf(buffer,"%.2Lf/%d/%s/%ld\n", elapsed_time, getppid(), log_action, info);
-  write(file_log, buffer, strlen(buffer));
-
-  return 0;
-}
-
-
-
-int close_log() {
-    if (close(file_log) != 0) {
-        printf("%s", strerror(errno));
+int write_log_int(char *log_action, long log_info) {
+    char buffer[256];
+    sprintf(buffer,"%.2Lf/%d/%s/%ld\n", elapsed_time(), getppid(), log_action, log_info);
+    if(write(file_log, buffer, strlen(buffer)) == -1)) {
         return 1;
     }
 
+    return 0;
+}
+
+int close_log() {
+    if (close(file_log) != 0) {
+        return 1;
+    }
     return 0;
 }
