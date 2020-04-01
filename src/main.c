@@ -50,19 +50,25 @@ int main(int argc, char *argv[]/*, char * envp[]*/) {
 
         if (sget_type(&stdout_status) == FTYPE_FIFO && sget_type(&stdin_status) == FTYPE_FIFO) {
             int std[3];
+
             if (read(STDIN_FILENO, std, sizeof(int) * 3) != sizeof(int) * 3) {
                 return error_sys("read error upon reading pipe to obtain stdout and stdin");
             }
             if ((ppipe_write = dup(STDOUT_FILENO)) == -1) {
                 return error_sys("dup error upon copying pipe descriptor");
             }
-            if (dup2(std[READ_PIPE], STDIN_FILENO) == -1 || dup2(std[WRITE_PIPE], STDOUT_FILENO) == -1 || dup2(std[LOG_FILE], STDIN_FILENO) == -1) { // Work but idk why
+            if (dup2(std[READ_PIPE], STDIN_FILENO) == -1 || dup2(std[WRITE_PIPE], STDOUT_FILENO) == -1) {
                 return error_sys("dup2 error upon restoring stdin and stdout");
             }
 
             /* set log file */
             log_file_fd = std[LOG_FILE];
             set_log_descriptor(log_file_fd);
+
+            // Write to log after restoring the file descriptor the information received
+            if(write_log_array("RECV_PIPE", std, 3)) {
+              return error_sys("error writing information received by pipe to log");
+            }
 
             subprocess = 1;
         } else {
@@ -223,8 +229,8 @@ int main(int argc, char *argv[]/*, char * envp[]*/) {
                                             }
 
                                             int subdir_size = 0;
-                                            if (read(pipe_ctop[READ_PIPE], &subdir_size, sizeof(int)) == -1) {
-                                                return error_sys("write error upon reading from child connection pipe");
+                                            if (read(pipe_ctop[READ_PIPE], &subdir_size, sizeof(int)) == -1 || write_log_int("RECV_PIPE", subdir_size)) {
+                                                return error_sys("write error upon reading from child connection pipe and/or write information received by pipe to log");
                                             }
                                             fsize += (flags & FLAG_SEPDIR) ? 0 : subdir_size;
                                         }
@@ -258,7 +264,7 @@ int main(int argc, char *argv[]/*, char * envp[]*/) {
 
                 if (subprocess) {
                     if (write(ppipe_write, &fsize, sizeof(int)) == -1 || write_log_int("SEND_PIPE", fsize)) {
-                        return error_sys("write error upong writing to parent connection pipe");
+                        return error_sys("write error upong writing to parent connection pipe and/or write information received by pipe to log");
                     }
                 }
 
