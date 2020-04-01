@@ -212,6 +212,10 @@ int main(int argc, char *argv[]/*, char * envp[]*/) {
                                         break;
                                     default:
                                         {
+                                            if (close(pipe_ctop[WRITE_PIPE]) || close(pipe_ctosp[WRITE_PIPE]) || close(pipe_ctosp[READ_PIPE])) {
+                                                return error_sys("close error upon closing pipe");
+                                            }
+
                                             if (waitpid(pid, &return_status, 0) == -1) {
                                                 return error_sys("waitpid error");
                                             }
@@ -233,6 +237,10 @@ int main(int argc, char *argv[]/*, char * envp[]*/) {
                                                 return error_sys("write error upon reading from child connection pipe and/or write information received by pipe to log");
                                             }
                                             fsize += (flags & FLAG_SEPDIR) ? 0 : subdir_size;
+
+                                            if (close(pipe_ctop[READ_PIPE])) {
+                                                return error_sys("close error upon closing pipe");
+                                            }
                                         }
                                         break;
                                 }
@@ -284,6 +292,11 @@ int main(int argc, char *argv[]/*, char * envp[]*/) {
            break;
         default:
             break;
+    }
+
+    if (subprocess) {
+        if (close(ppipe_write))
+            return error_sys("close error upon closing pipe");
     }
 
 
