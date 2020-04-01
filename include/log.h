@@ -15,6 +15,8 @@ int init_log();
   */
 int set_log_descriptor(int descriptor);
 
+//int set_time(struct timeval it);
+
 /**
   * @brief
   * @return             Return the elapsed time since program started

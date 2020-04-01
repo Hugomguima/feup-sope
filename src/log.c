@@ -49,6 +49,12 @@ int set_log_descriptor(int descriptor) {
     file_log = descriptor;
     return 0;
 }
+/*
+int set_time(struct timeval it) {
+  init_time = it;
+  return 0;
+}
+*/
 
 long double elapsed_time() {
   struct timeval current_time;
@@ -88,7 +94,7 @@ int write_log_array(char *log_action, int *info, int size) {
 int write_log_int(char *log_action, long log_info) {
     char buffer[256];
     sprintf(buffer,"%.2Lf/%d/%s/%ld\n", elapsed_time(), getppid(), log_action, log_info);
-    if(write(file_log, buffer, strlen(buffer)) == -1)) {
+    if(write(file_log, buffer, strlen(buffer)) == -1) {
         return 1;
     }
 
