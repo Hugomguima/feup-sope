@@ -44,6 +44,7 @@
     - [ ] action - description of the type of event: `CREATE`, `EXIT`, `RECV_SIGNAL`, `SEND_SIGNAL`, `RECV_PIPE`, `SEND_PIPE` and `ENTRY`
     - info - additional information for each of the actions
       - [ ] `CREATE` - the command line arguments
+      - [ ] `EXIT` – exit status
       - [ ] `RECV_SIGNAL` - the received signal (for example, `SIGINT`)
       - [ ] `SEND_SIGNAL` - the signal sent followed by the pid of the process for which it is intended
       - [ ] `RECV_PIPE` - the message sent
