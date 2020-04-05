@@ -36,10 +36,8 @@ int init_log() {
         return 1;
     }
 
-    gettimeofday(&init_time, 0);
-
     // Write the first line of log
-    char *str = "instant/pid/action/info \n";
+    char *str = "instant\tpid\taction\tinfo \n";
     write(file_log, str, strlen(str));
 
     return file_log;
@@ -49,12 +47,12 @@ int set_log_descriptor(int descriptor) {
     file_log = descriptor;
     return 0;
 }
-/*
-int set_time(struct timeval it) {
-  init_time = it;
+
+int set_time(struct timeval *it) {
+  init_time = *it;
   return 0;
 }
-*/
+
 
 long double elapsed_time() {
   struct timeval current_time;
@@ -64,7 +62,7 @@ long double elapsed_time() {
 
 int write_log(char *log_action, char *log_info) {
     char buffer[256];
-    sprintf(buffer,"%.2Lf/%d/%s/%s", elapsed_time(), getppid(), log_action, log_info);
+    sprintf(buffer,"%10.2Lf\t%15d\t%15s\t%s", elapsed_time(), getppid(), log_action, log_info);
 
     if(write(file_log, buffer, strlen(buffer)) == -1) {
         return 1;
@@ -81,7 +79,7 @@ int write_log_array(char *log_action, int *info, int size) {
     }
 
     char buffer[256];
-    sprintf(buffer,"%.2Lf/%d/%s/%s\n", elapsed_time(), getppid(), log_action, log_info);
+    sprintf(buffer,"%10.2Lf\t%15d\t%15s\t%s\n", elapsed_time(), getppid(), log_action, log_info);
     if(write(file_log, buffer, strlen(buffer)) == -1) {
         free(log_info);
         return 1;
@@ -93,7 +91,7 @@ int write_log_array(char *log_action, int *info, int size) {
 
 int write_log_int(char *log_action, long log_info) {
     char buffer[256];
-    sprintf(buffer,"%.2Lf/%d/%s/%ld\n", elapsed_time(), getppid(), log_action, log_info);
+    sprintf(buffer,"%10.2Lf\t%15d\t%15s\t%ld\n", elapsed_time(), getppid(), log_action, log_info);
     if(write(file_log, buffer, strlen(buffer)) == -1) {
         return 1;
     }

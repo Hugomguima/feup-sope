@@ -15,7 +15,7 @@ int init_log();
   */
 int set_log_descriptor(int descriptor);
 
-//int set_time(struct timeval it);
+int set_time();
 
 /**
   * @brief

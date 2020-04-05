@@ -7,6 +7,7 @@
 #include "log.h"
 
 /* SYSTEM CALLS  HEADERS */
+#include <sys/time.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
@@ -36,10 +37,12 @@ int main(int argc, char *argv[]/*, char * envp[]*/) {
         errno = EINVAL;
         return error_sys("Program usage: simpledu -l [path] [-a] [-b] [-B size] [-L] [-S] [--max-depth=N]");
     }
-
     int subprocess = 0; // indicates if this is a subprocess or the main process
     int ppipe_write;    // pipe to write to parent in case of subprocess
     int log_file_fd;
+    struct timeval init_time;
+
+    gettimeofday(&init_time, 0); // Init time
 
     {
         struct stat stdout_status, stdin_status;
@@ -54,6 +57,9 @@ int main(int argc, char *argv[]/*, char * envp[]*/) {
             if (read(STDIN_FILENO, std, sizeof(int) * 3) != sizeof(int) * 3) {
                 return error_sys("read error upon reading pipe to obtain stdout and stdin");
             }
+            if (read(STDIN_FILENO, &init_time, sizeof(init_time)) != sizeof(init_time)) {
+                return error_sys("read error upon reading pipe to obtain timeval");
+            }
             if ((ppipe_write = dup(STDOUT_FILENO)) == -1) {
                 return error_sys("dup error upon copying pipe descriptor");
             }
@@ -64,15 +70,17 @@ int main(int argc, char *argv[]/*, char * envp[]*/) {
             /* set log file */
             log_file_fd = std[LOG_FILE];
             set_log_descriptor(log_file_fd);
-
+            set_time(&init_time);
             // Write to log after restoring the file descriptor the information received
-            if(write_log_array("RECV_PIPE", std, 3)) {
-              return error_sys("error writing information received by pipe to log");
+            if(write_log_array("RECV_PIPE", std, 3) /* || write_log_array("RECV_PIPE", &init_time, sizeof(int_time)) -> do this */) {
+                write(STDOUT_FILENO, "error upon writing log", 22);
             }
+
 
             subprocess = 1;
         } else {
             log_file_fd = init_log();
+            set_time(&init_time);
 
             // Write commands passed as arguments
             char buffer[BUFFER_SIZE];
@@ -81,7 +89,9 @@ int main(int argc, char *argv[]/*, char * envp[]*/) {
                 strncat(buffer, " ", 1);
             }
             strncat(buffer, "\n", 1);
-            write_log("CREATE", buffer);
+            if (write_log("CREATE", buffer)) {
+                write(STDOUT_FILENO, "error upon writing log", 22);
+            }
           }
     }
 
@@ -160,7 +170,9 @@ int main(int argc, char *argv[]/*, char * envp[]*/) {
                             if ((flags & FLAG_ALL) && ((flags & FLAG_MAXDEPTH) == 0 || max_depth > 0)) {
                                 char buffer[BUFFER_SIZE];
                                 sprintf(buffer, "%ld""\x9""%s\n", new_fsize, new_path);
-                                write_log("ENTRY", buffer);
+                                if (write_log("ENTRY", buffer)) {
+                                    write(STDOUT_FILENO, "error upon writing log", 22);
+                                }
                                 write(STDOUT_FILENO, buffer, strlen(buffer));
 
                             }
@@ -192,11 +204,22 @@ int main(int argc, char *argv[]/*, char * envp[]*/) {
                                     case 0:
                                         {
                                             int std[3];
-                                            if ((std[READ_PIPE] = dup(STDIN_FILENO)) == -1 || (std[WRITE_PIPE] = dup(STDOUT_FILENO)) == -1 || (std[LOG_FILE] = dup(log_file_fd)) == -1) {
+                                            if ((std[READ_PIPE] = dup(STDIN_FILENO)) == -1 || (std[WRITE_PIPE] = dup(STDOUT_FILENO)) == -1) {
                                                 return error_sys("dup error upon copying stdin and stdout descriptors");
                                             }
-                                            if (write(pipe_ctosp[WRITE_PIPE], std, sizeof(int) * 3) == -1 || write_log_array("SEND_PIPE", std, 3)) {
-                                                return error_sys("write error to subprocess connection pipe or writing log");
+                                            if((std[LOG_FILE] = dup(log_file_fd)) == -1) {
+                                                return error_sys("dup error upon copying log_file_fd");
+                                            }
+                                            if (write(pipe_ctosp[WRITE_PIPE], std, sizeof(int) * 3) == -1) {
+                                                return error_sys("write error to subprocess connection pipe");
+                                            }
+                                            // write timeval to pipe
+                                            if (write(pipe_ctosp[WRITE_PIPE], &init_time, sizeof(init_time)) == -1){
+                                                return error_sys("write error to subprocess connection pipe");
+                                            }
+                                            // write log  of std
+                                            if (write_log_array("SEND_PIPE", std, 3) /* || write_log_array("RECV_PIPE", &init_time, sizeof(int_time)) -> do this */ ) {
+                                                write(STDOUT_FILENO, "error upon writing log", 22);
                                             }
                                             if (close(pipe_ctop[READ_PIPE]) || close(pipe_ctosp[WRITE_PIPE])) {
                                                 return error_sys("close error upon closing pipe");
@@ -233,9 +256,14 @@ int main(int argc, char *argv[]/*, char * envp[]*/) {
                                             }
 
                                             int subdir_size = 0;
-                                            if (read(pipe_ctop[READ_PIPE], &subdir_size, sizeof(int)) == -1 || write_log_int("RECV_PIPE", subdir_size)) {
+                                            if (read(pipe_ctop[READ_PIPE], &subdir_size, sizeof(int)) == -1) {
                                                 return error_sys("write error upon reading from child connection pipe and/or write information received by pipe to log");
                                             }
+
+                                            if(write_log_int("RECV_PIPE", subdir_size)) {
+                                                write(STDOUT_FILENO, "error upon writing log", 22);
+                                            }
+
                                             fsize += (flags & FLAG_SEPDIR) ? 0 : subdir_size;
 
                                             if (close(pipe_ctop[READ_PIPE])) {
@@ -253,7 +281,9 @@ int main(int argc, char *argv[]/*, char * envp[]*/) {
                                 if ((flags & FLAG_ALL) && ((flags & FLAG_MAXDEPTH) == 0 || max_depth > 0)) {
                                     char buffer[BUFFER_SIZE];
                                     sprintf(buffer, "%ld""\x9""%s\n", new_fsize, new_path);
-                                    write_log("ENTRY", buffer);
+                                    if(write_log("ENTRY", buffer)) {
+                                        write(STDOUT_FILENO, "error upon writing log", 22);
+                                    }
                                     write(STDOUT_FILENO, buffer, strlen(buffer));
                                 }
                            }
@@ -266,14 +296,20 @@ int main(int argc, char *argv[]/*, char * envp[]*/) {
                 if ((flags & FLAG_MAXDEPTH) == 0 || max_depth >= 0) {
                     char buffer[BUFFER_SIZE];
                     sprintf(buffer, "%ld""\x9""%s\n", fsize, path);
-                    write_log("ENTRY", buffer);
+                    if (write_log("ENTRY", buffer)) {
+                        write(STDOUT_FILENO, "error upon writing log", 22);
+                    }
                     write(STDOUT_FILENO, buffer, strlen(buffer));
                 }
 
                 if (subprocess) {
-                    if (write(ppipe_write, &fsize, sizeof(int)) == -1 || write_log_int("SEND_PIPE", fsize)) {
+                    if (write(ppipe_write, &fsize, sizeof(int)) == -1) {
                         return error_sys("write error upong writing to parent connection pipe and/or write information received by pipe to log");
                     }
+                }
+
+                if (write_log_int("SEND_PIPE", fsize)) {
+                    write(STDOUT_FILENO, "error upon writing log", 22);
                 }
 
                 if (closedir(dir)) {
@@ -286,7 +322,9 @@ int main(int argc, char *argv[]/*, char * envp[]*/) {
                 // Dereference symbolic link if flag is set
                 char buffer[BUFFER_SIZE];
                 sprintf(buffer, "%ld""\x9""%s\n", fsize, path);
-                write_log("ENTRY", buffer);
+                if (write_log("ENTRY", buffer)) {
+                    write(STDOUT_FILENO, "error upon writing log", 22);
+                }
                 write(STDOUT_FILENO, buffer, strlen(buffer));
            }
            break;
