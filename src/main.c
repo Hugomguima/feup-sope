@@ -27,8 +27,8 @@
 
 int error_sys(char *error_msg) {
     char error[BUFFER_SIZE];
-    sprintf(error, "%s\nError %d: %s\n", error_msg, errno, strerror(errno));
-    write(STDERR_FILENO, error, strlen(error));
+    sprintf(error, "simpledu: %s", error_msg);
+    perror(error);
     return errno;
 }
 
@@ -250,24 +250,20 @@ int main(int argc, char *argv[]/*, char * envp[]*/) {
                                             }
                                             free(new_argv);
 
-                                            if (!WIFEXITED(return_status) || WEXITSTATUS(return_status) != 0) {
-                                                write(STDERR_FILENO, "error on child\n", 16);
-                                                return -1;
-                                            }
+                                            if (WIFEXITED(return_status) && WEXITSTATUS(return_status) == 0) {
+                                                int subdir_size = 0;
+                                                if (read(pipe_ctop[READ_PIPE], &subdir_size, sizeof(int)) == -1) {
+                                                    return error_sys("write error upon reading from child connection pipe");
+                                                }
+                                                if(write_log_int("RECV_PIPE", subdir_size)) {
+                                                    write(STDOUT_FILENO, "error upon writing log", 22);
+                                                }
 
-                                            int subdir_size = 0;
-                                            if (read(pipe_ctop[READ_PIPE], &subdir_size, sizeof(int)) == -1) {
-                                                return error_sys("write error upon reading from child connection pipe and/or write information received by pipe to log");
-                                            }
+                                                fsize += (flags & FLAG_SEPDIR) ? 0 : subdir_size;
 
-                                            if(write_log_int("RECV_PIPE", subdir_size)) {
-                                                write(STDOUT_FILENO, "error upon writing log", 22);
-                                            }
-
-                                            fsize += (flags & FLAG_SEPDIR) ? 0 : subdir_size;
-
-                                            if (close(pipe_ctop[READ_PIPE])) {
-                                                return error_sys("close error upon closing pipe");
+                                                if (close(pipe_ctop[READ_PIPE])) {
+                                                    return error_sys("close error upon closing pipe");
+                                                }
                                             }
                                         }
                                         break;
