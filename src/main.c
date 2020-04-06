@@ -36,7 +36,6 @@ int main(int argc, char *argv[]/*, char * envp[]*/) {
         errno = EINVAL;
         return error_sys("Program usage: simpledu -l [path] [-a] [-b] [-B size] [-L] [-S] [--max-depth=N]");
     }
-
     int subprocess = 0; // indicates if this is a subprocess or the main process
     int ppipe_write;    // pipe to write to parent in case of subprocess
 
@@ -149,7 +148,7 @@ int main(int argc, char *argv[]/*, char * envp[]*/) {
                                 // Build command line arguments
                                 parse_info_t new_info;
                                 new_info.path = new_path;
-                                new_info.block_size = info.block_size;
+                                new_info.block_size = block_size;
                                 new_info.max_depth = (info.max_depth > 0) ? max_depth - 1 : max_depth;
 
                                 char **new_argv = build_argv(argv[0], flags, &new_info);
@@ -185,6 +184,10 @@ int main(int argc, char *argv[]/*, char * envp[]*/) {
 
                                             if (dup2(pipe_ctop[WRITE_PIPE], STDOUT_FILENO) == -1 || dup2(pipe_ctosp[READ_PIPE], STDIN_FILENO) == -1) {
                                                 return error_sys("dup2 error upon redefining descriptors pointed by stdin and stdout");
+                                            }
+
+                                            if (close(pipe_ctop[WRITE_PIPE]) || close(pipe_ctosp[READ_PIPE])) {
+                                                return error_sys("close error upon closing pipe");
                                             }
 
                                             if (execv(argv[0], new_argv) == -1) {

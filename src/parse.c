@@ -36,6 +36,9 @@ char** build_argv(char *argv0, int flags, parse_info_t *info) {
         cmd[i++] = strdup("--all");
     }
     if (flags & FLAG_BYTES) {
+        cmd[i++] = strdup("--bytes");
+    }
+    if (flags & FLAG_BSIZE) {
         char num[50];
         sprintf(num, "%d", info->block_size);
         cmd[i++] = str_cat("--block-size=", num, strlen(num));
