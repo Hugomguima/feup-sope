@@ -71,8 +71,9 @@ int main(int argc, char *argv[]/*, char * envp[]*/) {
             log_file_fd = std[LOG_FILE];
             set_log_descriptor(log_file_fd);
             set_time(&init_time);
+
             // Write to log after restoring the file descriptor the information received
-            if(write_log_array("RECV_PIPE", std, 3) /* || write_log_array("RECV_PIPE", &init_time, sizeof(int_time)) -> do this */) {
+            if(write_log_array("RECV_PIPE", std, 3)  || write_log_timeval("RECV_PIPE", init_time)) {
                 write(STDOUT_FILENO, "error upon writing log", 22);
             }
 
@@ -218,7 +219,7 @@ int main(int argc, char *argv[]/*, char * envp[]*/) {
                                                 return error_sys("write error to subprocess connection pipe");
                                             }
                                             // write log  of std
-                                            if (write_log_array("SEND_PIPE", std, 3) /* || write_log_array("RECV_PIPE", &init_time, sizeof(int_time)) -> do this */ ) {
+                                            if (write_log_array("SEND_PIPE", std, 3) || write_log_timeval("SEND_PIPE", init_time)) {
                                                 write(STDOUT_FILENO, "error upon writing log", 22);
                                             }
                                             if (close(pipe_ctop[READ_PIPE]) || close(pipe_ctosp[WRITE_PIPE])) {
@@ -249,6 +250,10 @@ int main(int argc, char *argv[]/*, char * envp[]*/) {
                                                 i++;
                                             }
                                             free(new_argv);
+
+                                            if (write_log_int("EXIT", WEXITSTATUS(return_status))) {
+                                                write(STDOUT_FILENO, "error upon writing log", 22);
+                                            }
 
                                             if (WIFEXITED(return_status) && WEXITSTATUS(return_status) == 0) {
                                                 int subdir_size = 0;

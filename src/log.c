@@ -70,6 +70,16 @@ int write_log(char *log_action, char *log_info) {
     return 0;
 }
 
+int write_log_timeval(char *log_action, struct timeval log_info) {
+    char buffer[256];
+    sprintf(buffer,"%10.2Lf\t%15d\t%15s\t%ld%ld\n", elapsed_time(), getppid(), log_action, log_info.tv_sec, log_info.tv_usec);
+
+    if(write(file_log, buffer, strlen(buffer)) == -1) {
+        return 1;
+    }
+    return 0;
+}
+
 int write_log_array(char *log_action, int *info, int size) {
     char to_char[256];
     char *log_info = malloc(256);
@@ -85,7 +95,6 @@ int write_log_array(char *log_action, int *info, int size) {
         return 1;
     }
     free(log_info);
-
     return 0;
 }
 

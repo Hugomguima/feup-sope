@@ -1,6 +1,8 @@
 #ifndef LOG_H_INCLUDED
 #define LOG_H_INCLUDED
 
+#include <sys/time.h>
+
 #define DEFAULT_MODE 0644 /**< @brief Permissions associated with the file */
 
 /**
@@ -15,7 +17,7 @@ int init_log();
   */
 int set_log_descriptor(int descriptor);
 
-int set_time();
+int set_time(struct timeval *it);
 
 /**
   * @brief
@@ -23,6 +25,7 @@ int set_time();
   */
 long double elapsed_time();
 
+int write_log_timeval(char *log_action, struct timeval log_info);
 /**
  * @brief               Write an action to log
  * @param log_action    Description of type of event
