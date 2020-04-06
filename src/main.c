@@ -131,120 +131,119 @@ int main(int argc, char *argv[]/*, char * envp[]*/) {
                         return error_sys("fget_status error on reading directory's file status");
                     }
 
-                    if (max_depth != 0) {
-                      file_type_t new_type = sget_type(&new_status);
-                      long new_fsize;
-                      switch (new_type) {
-                          case FTYPE_REG:
-                              new_fsize = fget_size(flags & FLAG_BYTES, &new_status, block_size);
-                              fsize += new_fsize;
-                              if ((flags & FLAG_ALL) && ((flags & FLAG_MAXDEPTH) == 0 || max_depth > 0)) {
-                                  char buffer[BUFFER_SIZE];
-                                  sprintf(buffer, "%ld""\x9""%s\n", new_fsize, new_path);
-                                  write(STDOUT_FILENO, buffer, strlen(buffer));
-                              }
-                              break;
-                          case FTYPE_DIR:
-                              {
-                                  // Build command line arguments
-                                  parse_info_t new_info;
-                                  new_info.path = new_path;
-                                  new_info.block_size = block_size;
-                                  new_info.max_depth = (info.max_depth > 0) ? max_depth - 1 : max_depth;
+                    file_type_t new_type = sget_type(&new_status);
+                    long new_fsize;
+                    switch (new_type) {
+                        case FTYPE_REG:
+                            new_fsize = fget_size(flags & FLAG_BYTES, &new_status, block_size);
+                            fsize += new_fsize;
+                            if ((flags & FLAG_ALL) && ((flags & FLAG_MAXDEPTH) == 0 || max_depth > 0)) {
+                                char buffer[BUFFER_SIZE];
+                                sprintf(buffer, "%ld""\x9""%s\n", new_fsize, new_path);
+                                write(STDOUT_FILENO, buffer, strlen(buffer));
+                            }
+                            break;
+                        case FTYPE_DIR:
+                            {
+                                // Build command line arguments
+                                parse_info_t new_info;
+                                new_info.path = new_path;
+                                new_info.block_size = block_size;
+                                new_info.max_depth = (info.max_depth > 0) ? max_depth - 1 : max_depth;
 
-                                  char **new_argv = build_argv(argv[0], flags, &new_info);
+                                char **new_argv = build_argv(argv[0], flags, &new_info);
 
-                                  int pipe_ctosp[2];  // Pipe child to subprocess
-                                  int pipe_ctop[2];   // Pipe child to parent
+                                int pipe_ctosp[2];  // Pipe child to subprocess
+                                int pipe_ctop[2];   // Pipe child to parent
 
-                                  int return_status;
+                                int return_status;
 
-                                  if (pipe(pipe_ctosp) || pipe(pipe_ctop)) {
-                                      return error_sys("pipe error");
-                                  }
-
-                                  pid_t pid = fork();
-
-                                  switch (pid) {
-                                      case -1:
-                                          return error_sys("fork error");
-                                      case 0:
-                                          {
-                                              int std[2 ];
-                                              if ((std[READ_PIPE] = dup(STDIN_FILENO)) == -1 || (std[WRITE_PIPE] = dup(STDOUT_FILENO)) == -1) {
-                                                  return error_sys("dup error upon copying stdin and stdout descriptors");
-                                              }
-
-                                              if (write(pipe_ctosp[WRITE_PIPE], std, sizeof(int) * 2) == -1) {
-                                                  return error_sys("write error to subprocess connection pipe");
-                                              }
-
-                                              if (close(pipe_ctop[READ_PIPE]) || close(pipe_ctosp[WRITE_PIPE])) {
-                                                  return error_sys("close error upon closing pipe");
-                                              }
-
-                                              if (dup2(pipe_ctop[WRITE_PIPE], STDOUT_FILENO) == -1 || dup2(pipe_ctosp[READ_PIPE], STDIN_FILENO) == -1) {
-                                                  return error_sys("dup2 error upon redefining descriptors pointed by stdin and stdout");
-                                              }
-
-                                              if (close(pipe_ctop[WRITE_PIPE]) || close(pipe_ctosp[READ_PIPE])) {
-                                                  return error_sys("close error upon closing pipe");
-                                              }
-
-                                              if (execv(argv[0], new_argv) == -1) {
-                                                  return error_sys("execv error");
-                                              }
-                                          }
-                                          break;
-                                      default:
-                                          {
-                                              if (close(pipe_ctop[WRITE_PIPE]) || close(pipe_ctosp[WRITE_PIPE]) || close(pipe_ctosp[READ_PIPE])) {
-                                                  return error_sys("close error upon closing pipe");
-                                              }
-
-                                              if (waitpid(pid, &return_status, 0) == -1) {
-                                                  return error_sys("waitpid error");
-                                              }
-
-                                              int i = 0;
-                                              while (new_argv[i] != NULL) {
-                                                  free(new_argv[i]);
-                                                  i++;
-                                              }
-                                              free(new_argv);
-
-                                              if (WIFEXITED(return_status) && WEXITSTATUS(return_status) == 0) {
-                                                  int subdir_size = 0;
-                                                  if (read(pipe_ctop[READ_PIPE], &subdir_size, sizeof(int)) == -1) {
-                                                      return error_sys("write error upon reading from child connection pipe");
-                                                  }
-                                                  fsize += (flags & FLAG_SEPDIR) ? 0 : subdir_size;
-
-                                                  if (close(pipe_ctop[READ_PIPE])) {
-                                                      return error_sys("close error upon closing pipe");
-                                                  }
-                                              }
-                                          }
-                                          break;
-                                  }
+                                if (pipe(pipe_ctosp) || pipe(pipe_ctop)) {
+                                    return error_sys("pipe error");
                                 }
-                                break;
-                            case FTYPE_LINK:
-                                {
-                                    new_fsize = fget_size(flags & FLAG_BYTES, &new_status, block_size);
-                                    fsize += new_fsize;
-                                    if ((flags & FLAG_ALL) && ((flags & FLAG_MAXDEPTH) == 0 || max_depth > 0)) {
-                                        char buffer[BUFFER_SIZE];
-                                        sprintf(buffer, "%ld""\x9""%s\n", new_fsize, new_path);
-                                        write(STDOUT_FILENO, buffer, strlen(buffer));
-                                    }
-                               }
-                               break;
-                            default:
-                                break;
-                        }
+
+                                pid_t pid = fork();
+
+                                switch (pid) {
+                                    case -1:
+                                        return error_sys("fork error");
+                                    case 0:
+                                        {
+                                            int std[2 /*3*/];
+                                            if ((std[READ_PIPE] = dup(STDIN_FILENO)) == -1 || (std[WRITE_PIPE] = dup(STDOUT_FILENO)) == -1 /* || (std[LOG_FILE] = dup(log_file_fd)) == -1 */) {
+                                                return error_sys("dup error upon copying stdin and stdout descriptors");
+                                            }
+
+                                            if (write(pipe_ctosp[WRITE_PIPE], std, sizeof(int) * 2 /* 3 */) == -1) {
+                                                return error_sys("write error to subprocess connection pipe");
+                                            }
+
+                                            if (close(pipe_ctop[READ_PIPE]) || close(pipe_ctosp[WRITE_PIPE])) {
+                                                return error_sys("close error upon closing pipe");
+                                            }
+
+                                            if (dup2(pipe_ctop[WRITE_PIPE], STDOUT_FILENO) == -1 || dup2(pipe_ctosp[READ_PIPE], STDIN_FILENO) == -1) {
+                                                return error_sys("dup2 error upon redefining descriptors pointed by stdin and stdout");
+                                            }
+
+                                            if (close(pipe_ctop[WRITE_PIPE]) || close(pipe_ctosp[READ_PIPE])) {
+                                                return error_sys("close error upon closing pipe");
+                                            }
+
+                                            if (execv(argv[0], new_argv) == -1) {
+                                                return error_sys("execv error");
+                                            }
+                                        }
+                                        break;
+                                    default:
+                                        {
+                                            if (close(pipe_ctop[WRITE_PIPE]) || close(pipe_ctosp[WRITE_PIPE]) || close(pipe_ctosp[READ_PIPE])) {
+                                                return error_sys("close error upon closing pipe");
+                                            }
+
+                                            if (waitpid(pid, &return_status, 0) == -1) {
+                                                return error_sys("waitpid error");
+                                            }
+
+                                            int i = 0;
+                                            while (new_argv[i] != NULL) {
+                                                free(new_argv[i]);
+                                                i++;
+                                            }
+                                            free(new_argv);
+
+                                            if (WIFEXITED(return_status) && WEXITSTATUS(return_status) == 0) {
+                                                int subdir_size = 0;
+                                                if (read(pipe_ctop[READ_PIPE], &subdir_size, sizeof(int)) == -1) {
+                                                    return error_sys("write error upon reading from child connection pipe");
+                                                }
+                                                fsize += (flags & FLAG_SEPDIR) ? 0 : subdir_size;
+
+                                                if (close(pipe_ctop[READ_PIPE])) {
+                                                    return error_sys("close error upon closing pipe");
+                                                }
+                                            }
+                                        }
+                                        break;
+                                }
+                            }
+                            break;
+                        case FTYPE_LINK:
+                            {
+                                new_fsize = fget_size(flags & FLAG_BYTES, &new_status, block_size);
+                                fsize += new_fsize;
+                                if ((flags & FLAG_ALL) && ((flags & FLAG_MAXDEPTH) == 0 || max_depth > 0)) {
+                                    char buffer[BUFFER_SIZE];
+                                    sprintf(buffer, "%ld""\x9""%s\n", new_fsize, new_path);
+                                    write(STDOUT_FILENO, buffer, strlen(buffer));
+                                }
+                           }
+                           break;
+                        default:
+                            break;
                     }
-              }
+
+                }
                 if ((flags & FLAG_MAXDEPTH) == 0 || max_depth >= 0) {
                     char buffer[BUFFER_SIZE];
                     sprintf(buffer, "%ld""\x9""%s\n", fsize, path);
