@@ -49,7 +49,7 @@ char** build_argv(char *argv0, int flags, parse_info_t *info) {
     if (flags & FLAG_SEPDIR) {
         cmd[i++] = strdup("--separate-dirs");
     }
-    if (flags & FLAG_MAXDEPTH) {
+    if ((flags & FLAG_MAXDEPTH)) {
         char num[50];
         sprintf(num, "%d", info->max_depth);
         cmd[i++] = str_cat("--max-depth=", num, strlen(num));
@@ -126,7 +126,7 @@ int parse_cmd(int argc, char *argv[], parse_info_t *info) {
             flags |= FLAG_DEREF; // update flag
         }
         else if (strcmp(argv[i], "--separate-dirs") == 0) {
-            if (flags & FLAG_DEREF) {
+            if (flags & FLAG_SEPDIR) {
                 write(STDERR_FILENO, "Repeated flag: -S or --separate-dirs\n", 38);
                 flags |= FLAG_ERR;
                 return flags;
