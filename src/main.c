@@ -108,8 +108,6 @@ int main(int argc, char *argv[]/*, char * envp[]*/) {
             {
                 DIR *dir;
 
-                fsize = 0;
-
                 if ((dir = opendir(path)) == NULL) {
                     return error_sys("opendir error");
                 }

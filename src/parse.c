@@ -49,7 +49,7 @@ char** build_argv(char *argv0, int flags, parse_info_t *info) {
     if (flags & FLAG_SEPDIR) {
         cmd[i++] = strdup("--separate-dirs");
     }
-    if ((flags & FLAG_MAXDEPTH)) {
+    if (flags & FLAG_MAXDEPTH) {
         char num[50];
         sprintf(num, "%d", info->max_depth);
         cmd[i++] = str_cat("--max-depth=", num, strlen(num));
