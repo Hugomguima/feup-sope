@@ -36,6 +36,9 @@ char** build_argv(char *argv0, int flags, parse_info_t *info) {
         cmd[i++] = strdup("--all");
     }
     if (flags & FLAG_BYTES) {
+        cmd[i++] = strdup("--bytes");
+    }
+    if (flags & FLAG_BSIZE) {
         char num[50];
         sprintf(num, "%d", info->block_size);
         cmd[i++] = str_cat("--block-size=", num, strlen(num));
@@ -123,7 +126,7 @@ int parse_cmd(int argc, char *argv[], parse_info_t *info) {
             flags |= FLAG_DEREF; // update flag
         }
         else if (strcmp(argv[i], "--separate-dirs") == 0) {
-            if (flags & FLAG_DEREF) {
+            if (flags & FLAG_SEPDIR) {
                 write(STDERR_FILENO, "Repeated flag: -S or --separate-dirs\n", 38);
                 flags |= FLAG_ERR;
                 return flags;
