@@ -55,3 +55,7 @@ void sigint_handler(int signo){
 void sigcont_handler(int signo){
     (void) signo;
 }
+
+void sigtermn_handler(int signo){
+    (void) signo;
+}
