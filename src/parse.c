@@ -64,14 +64,14 @@ int parse_cmd(int argc, char *argv[], parse_info_t *info) {
     int flags = 0;
 
     if (argv == NULL || info == NULL) {
-        write(STDERR_FILENO, "Invalid argument, one or more null pointers\n", 44);
+        write(STDERR_FILENO, "Invalid argument, one or more null pointers\n", 43);
         flags |= FLAG_ERR;
         return flags;
     }
 
     // Obligatory flag -l
     if (strcmp(argv[0], "-l") != 0 && strcmp(argv[0], "--count-links") != 0) {
-        write(STDERR_FILENO, "Missing obligatory flag: -l\n", 28);
+        write(STDERR_FILENO, "Missing obligatory flag: -l\n", 27);
         flags |= FLAG_ERR;
         return flags;
     }
@@ -81,7 +81,7 @@ int parse_cmd(int argc, char *argv[], parse_info_t *info) {
     for (int i = 1; i < argc; i++) {
         if (strcmp(argv[i], "--all") == 0) {
             if (flags & FLAG_ALL) {
-                write(STDERR_FILENO, "Repeated flag: -a or --all\n", 28);
+                write(STDERR_FILENO, "Repeated flag: -a or --all\n", 27);
                 flags |= FLAG_ERR;
                 return flags;
             }
@@ -90,7 +90,7 @@ int parse_cmd(int argc, char *argv[], parse_info_t *info) {
         }
         else if (strcmp(argv[i], "--bytes") == 0) {
             if (flags & FLAG_BYTES) {
-                write(STDERR_FILENO, "Repeated flag: -b or --bytes\n", 30);
+                write(STDERR_FILENO, "Repeated flag: -b or --bytes\n", 29);
                 flags |= FLAG_ERR;
                 return flags;
             }
@@ -99,7 +99,7 @@ int parse_cmd(int argc, char *argv[], parse_info_t *info) {
         }
         else if (strncmp(argv[i], "--block-size=", 13) == 0) {
             if (flags & FLAG_BSIZE) {
-                write(STDERR_FILENO, "Repeated flag: -B or --block-size\n", 35);
+                write(STDERR_FILENO, "Repeated flag: -B or --block-size\n", 36);
                 flags |= FLAG_ERR;
                 return flags;
             }
@@ -107,7 +107,7 @@ int parse_cmd(int argc, char *argv[], parse_info_t *info) {
             char *tmp = argv[i] + 13; // skip "--block-size="
 
             if (strlen(tmp) == 0 || str_isDigit(tmp) < 1) {
-                write(STDERR_FILENO, "Flag -B or --block-size missing an integer\n", 44);
+                write(STDERR_FILENO, "Flag -B or --block-size missing an integer\n", 43);
                 flags |= FLAG_ERR;
                 return flags;
             }
@@ -118,7 +118,7 @@ int parse_cmd(int argc, char *argv[], parse_info_t *info) {
         }
         else if (strcmp(argv[i], "--dereference") == 0) {
             if (flags & FLAG_DEREF) {
-                write(STDERR_FILENO, "Repeated flag: -L or --dereference\n", 36);
+                write(STDERR_FILENO, "Repeated flag: -L or --dereference\n", 35);
                 flags |= FLAG_ERR;
                 return flags;
             }
@@ -127,7 +127,7 @@ int parse_cmd(int argc, char *argv[], parse_info_t *info) {
         }
         else if (strcmp(argv[i], "--separate-dirs") == 0) {
             if (flags & FLAG_SEPDIR) {
-                write(STDERR_FILENO, "Repeated flag: -S or --separate-dirs\n", 38);
+                write(STDERR_FILENO, "Repeated flag: -S or --separate-dirs\n", 37);
                 flags |= FLAG_ERR;
                 return flags;
             }
@@ -136,7 +136,7 @@ int parse_cmd(int argc, char *argv[], parse_info_t *info) {
         }
         else if (strncmp(argv[i], "--max-depth=", 12) == 0) {
             if (flags & FLAG_MAXDEPTH) {
-                write(STDERR_FILENO, "Repeated flag: --max-depth\n", 38);
+                write(STDERR_FILENO, "Repeated flag: --max-depth\n", 39);
                 flags |= FLAG_ERR;
                 return flags;
             }
@@ -144,7 +144,7 @@ int parse_cmd(int argc, char *argv[], parse_info_t *info) {
             char *tmp = argv[i] + 12; // skip "--max-depth="
 
             if (strlen(tmp) == 0 || str_isDigit(tmp) < 1) {
-                write(STDERR_FILENO, "Flag --max-depth must have an integer\n", 47);
+                write(STDERR_FILENO, "Flag --max-depth must have an integer\n", 46);
                 flags |= FLAG_ERR;
                 return flags;
             }
@@ -157,21 +157,21 @@ int parse_cmd(int argc, char *argv[], parse_info_t *info) {
             char *tmp = argv[i] + 1; // skip "-"
 
             if (strlen(tmp) == 0 || str_isAlpha(tmp) < 1) {
-                write(STDERR_FILENO, "Invalid flag or flags\n", 23);
+                write(STDERR_FILENO, "Invalid flag or flags\n", 24);
                 flags |= FLAG_ERR;
                 return flags;
             }
 
             if (str_find(tmp, "l", 0) >= 0) {
                 if (flags & FLAG_ALL) {
-                    write(STDERR_FILENO, "Repeated flag: -a or --all\n", 28);
+                    write(STDERR_FILENO, "Repeated flag: -a or --all\n", 27);
                     flags |= FLAG_ERR;
                     return flags;
                 }
             }
             if (str_find(tmp, "a", 0) >= 0) {
                 if (flags & FLAG_ALL) {
-                    write(STDERR_FILENO, "Repeated flag: -a or --all\n", 28);
+                    write(STDERR_FILENO, "Repeated flag: -a or --all\n", 27);
                     flags |= FLAG_ERR;
                     return flags;
                 }
@@ -180,7 +180,7 @@ int parse_cmd(int argc, char *argv[], parse_info_t *info) {
             }
             if (str_find(tmp, "b", 0) >= 0) {
                 if (flags & FLAG_BYTES) {
-                    write(STDERR_FILENO, "Repeated flag: -b or --bytes\n", 30);
+                    write(STDERR_FILENO, "Repeated flag: -b or --bytes\n", 29);
                     flags |= FLAG_ERR;
                     return flags;
                 }
@@ -189,7 +189,7 @@ int parse_cmd(int argc, char *argv[], parse_info_t *info) {
             }
             if (str_find(tmp, "L", 0) >= 0) {
                 if (flags & FLAG_DEREF) {
-                    write(STDERR_FILENO, "Repeated flag: -L or --dereference\n", 36);
+                    write(STDERR_FILENO, "Repeated flag: -L or --dereference\n", 35);
                     flags |= FLAG_ERR;
                     return flags;
                 }
@@ -198,7 +198,7 @@ int parse_cmd(int argc, char *argv[], parse_info_t *info) {
             }
             if (str_find(tmp, "S", 0) >= 0) {
                 if (flags & FLAG_SEPDIR) {
-                    write(STDERR_FILENO, "Repeated flag: -S or --separate-dirs\n", 38);
+                    write(STDERR_FILENO, "Repeated flag: -S or --separate-dirs\n", 37);
                     flags |= FLAG_ERR;
                     return flags;
                 }
@@ -207,13 +207,13 @@ int parse_cmd(int argc, char *argv[], parse_info_t *info) {
             }
             if (str_find(tmp, "B", 0) >= 0) {
                 if (flags & FLAG_BSIZE) {
-                    write(STDERR_FILENO, "Repeated flag: -B or --block-size\n", 35);
+                    write(STDERR_FILENO, "Repeated flag: -B or --block-size\n", 34);
                     flags |= FLAG_ERR;
                     return flags;
                 }
 
                 if (i + 1 >= argc || strlen(argv[i+1]) == 0 || str_isDigit(argv[i+1]) < 1) {
-                    write(STDERR_FILENO, "Flag -B or --block-size missing an integer\n", 44);
+                    write(STDERR_FILENO, "Flag -B or --block-size missing an integer\n", 43);
                     flags |= FLAG_ERR;
                     return flags;
                 }
@@ -227,7 +227,7 @@ int parse_cmd(int argc, char *argv[], parse_info_t *info) {
         else { // verify if it's valid path
 
             if (flags & FLAG_PATH) {
-                write(STDERR_FILENO, "Repeated flag: path\n", 21);
+                write(STDERR_FILENO, "Repeated flag: path\n", 20);
                 flags |= FLAG_ERR;
                 return flags;
             }
@@ -241,7 +241,7 @@ int parse_cmd(int argc, char *argv[], parse_info_t *info) {
 
             info->path = strdup(argv[i]);
             if (rtrim(info->path, '/', MODE_RMDUP)) {
-                write(STDERR_FILENO, "Error trimming path\n", 21);
+                write(STDERR_FILENO, "Error trimming path\n", 20);
                 flags |= FLAG_ERR;
                 return flags;
             }
