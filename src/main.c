@@ -5,6 +5,7 @@
 #include "parse.h"
 #include "utils.h"
 #include "log.h"
+#include "sig_handler.h"
 
 /* SYSTEM CALLS  HEADERS */
 #include <sys/time.h>
@@ -113,9 +114,23 @@ int main(int argc, char *argv[]/*, char * envp[]*/) {
           }
     }
 
+    //Struct para dar handle a SIGINT
+    struct sigaction action;
+    action.sa_handler = subprocess ? SIG_IGN : sigint_handler;
+    sigemptyset(&action.sa_mask);
+    action.sa_flags = 0;
+
+    //Instalação do sigint_handler
+
+    if(!subprocess) sigaddset(&action.sa_mask,SIGTSTP);
+
+    if (sigaction(SIGINT,&action,NULL) < 0){
+        fprintf(stderr,"Unable to install SIGINT handler\n");
+        exit(1);
+    }
+
     // error | path | max-depth | S | L | B | b | a | l
     int flags;
-
     parse_info_t info;
     init_parse_info(&info);
     flags = parse_cmd(argc - 1, &argv[1], &info);
@@ -217,7 +232,10 @@ int main(int argc, char *argv[]/*, char * envp[]*/) {
                                     return exit_status;
                                 }
 
+
                                 pid_t pid = fork();
+
+                                //sleep(2);
 
                                 switch (pid) {
                                     case -1:
@@ -268,8 +286,11 @@ int main(int argc, char *argv[]/*, char * envp[]*/) {
                                             }
                                         }
                                         break;
-                                    default:
+                                    default: // Pai
                                         {
+
+                                            setGlobalProcess(pid);
+
                                             if (close(pipe_ctop[WRITE_PIPE]) || close(pipe_ctosp[WRITE_PIPE]) || close(pipe_ctosp[READ_PIPE])) {
                                                 exit_status = error_sys("close error upon closing pipe");
                                                 return exit_status;
@@ -277,12 +298,12 @@ int main(int argc, char *argv[]/*, char * envp[]*/) {
 
                                             do {
                                                 if (waitpid(pid, &return_status, 0) == -1) {
-                                                    if (WIFSIGNALED(return_status) && WIFSTOPPED(return_status) == SIGSTOP) continue;
-                                                    exit_status = error_sys("waitpid error");
-                                                    return exit_status;
+                                                    if (errno == EINTR) continue;
+                                                    return error_sys("waitpid error");
                                                 }
                                                 break;
                                             } while (1);
+                                            resetGlobalProcess();
 
                                             int i = 0;
                                             while (new_argv[i] != NULL) {
@@ -308,6 +329,7 @@ int main(int argc, char *argv[]/*, char * envp[]*/) {
                                                     return exit_status;
                                                 }
                                             }
+
                                         }
                                         break;
                                 }
