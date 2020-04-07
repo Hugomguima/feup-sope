@@ -68,6 +68,20 @@ int main(int argc, char *argv[]/*, char * envp[]*/) {
         }
     }
 
+    //Struct para dar handle a SIGINT
+    struct sigaction action;
+    action.sa_handler = sigint_handler;
+    sigemptyset(&action.sa_mask);
+    action.sa_flags = 0;
+
+    //Instalação do sigint_handler
+    if(!subprocess){
+      if (sigaction(SIGINT,&action,NULL) < 0){
+       fprintf(stderr,"Unable to install SIGINT handler\n");
+       exit(1);
+    }   
+   }
+
     // error | path | max-depth | S | L | B | b | a | l
     int flags;
 
@@ -164,17 +178,7 @@ int main(int argc, char *argv[]/*, char * envp[]*/) {
                                     return error_sys("pipe error");
                                 }
 
-                                //Struct para dar handle a SIGINT
-                                struct sigaction action;
-                                action.sa_handler = sigint_handler;
-                                sigemptyset(&action.sa_mask);
-                                action.sa_flags = 0;
 
-                                //Instalação do sigint_handler
-                                if (sigaction(SIGINT,&action,NULL) < 0){
-                                 fprintf(stderr,"Unable to install SIGINT handler\n");
-                                 exit(1);
-                               }
                                 pid_t pid = fork();
                                 //sleep(2);
 
