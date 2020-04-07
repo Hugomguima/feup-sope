@@ -114,7 +114,7 @@ int main(int argc, char *argv[]/*, char * envp[]*/) {
 
     path = (flags & FLAG_PATH) ? info.path : ".";
     block_size = (flags & FLAG_BSIZE) ? info.block_size : 1024;
-    max_depth = (flags & FLAG_MAXDEPTH) ? info.max_depth : -1;
+    max_depth = (flags & FLAG_MAXDEPTH) ? info.max_depth - subprocess : -1;
 
     struct stat status;
 
@@ -183,8 +183,8 @@ int main(int argc, char *argv[]/*, char * envp[]*/) {
                                 // Build command line arguments
                                 parse_info_t new_info;
                                 new_info.path = new_path;
-                                new_info.block_size = info.block_size;
-                                new_info.max_depth = (info.max_depth > 0) ? max_depth - 1 : max_depth;
+                                new_info.block_size = block_size;
+                                new_info.max_depth = (max_depth > 0) ? max_depth : 0;
 
                                 char **new_argv = build_argv(argv[0], flags, &new_info);
 
@@ -229,6 +229,11 @@ int main(int argc, char *argv[]/*, char * envp[]*/) {
                                             if (dup2(pipe_ctop[WRITE_PIPE], STDOUT_FILENO) == -1 || dup2(pipe_ctosp[READ_PIPE], STDIN_FILENO) == -1) {
                                                 return error_sys("dup2 error upon redefining descriptors pointed by stdin and stdout");
                                             }
+
+                                            if (close(pipe_ctop[WRITE_PIPE]) || close(pipe_ctosp[READ_PIPE])) {
+                                                return error_sys("close error upon closing pipe");
+                                            }
+
                                             if (execv(argv[0], new_argv) == -1) {
                                                 return error_sys("execv error");
                                             }
@@ -294,7 +299,7 @@ int main(int argc, char *argv[]/*, char * envp[]*/) {
                     }
 
                 }
-                if ((flags & FLAG_MAXDEPTH) == 0 || max_depth >= 0) {
+                if (!subprocess || (flags & FLAG_MAXDEPTH) == 0 || max_depth >= 0) {
                     char buffer[BUFFER_SIZE];
                     sprintf(buffer, "%ld""\x9""%s\n", fsize, path);
                     if (write_log("ENTRY", buffer)) {
