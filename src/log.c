@@ -20,7 +20,13 @@ int file_log;
 
 int init_log() {
     if(getenv("LOG_FILENAME") != NULL) { // Write log to LOG_FILENAME
-        file_log = open("LOG_FILENAME" , O_WRONLY | O_CREAT | O_TRUNC, DEFAULT_MODE);
+        struct stat st;
+        if (stat("./log", &st) == -1) {
+            mkdir("./log", 0700);
+        }
+        char file_path[256];
+        sprintf(file_path, "./log/%s", getenv("LOG_FILENAME"));
+        file_log = open(file_path, O_WRONLY | O_CREAT | O_TRUNC, DEFAULT_MODE);
     }
     else { // Write log to a pre defined file
         struct stat st;
@@ -36,8 +42,9 @@ int init_log() {
     }
 
     // Write the first line of log
-    char *str = "instant\tpid\taction\tinfo \n";
-    write(file_log, str, strlen(str));
+    char buffer[256];
+    sprintf(buffer,"%12s\t%15s\t%15s\t%s\n", "Instant", "PID", "Action", "Info");
+    write(file_log, buffer, strlen(buffer));
 
     return file_log;
 }
