@@ -5,6 +5,7 @@
 #include "parse.h"
 #include "utils.h"
 #include "log.h"
+#include "sig_handler.h"
 
 /* SYSTEM CALLS  HEADERS */
 #include <sys/types.h>
@@ -163,12 +164,24 @@ int main(int argc, char *argv[]/*, char * envp[]*/) {
                                     return error_sys("pipe error");
                                 }
 
+                                //Struct para dar handle a SIGINT
+                                struct sigaction action;
+                                action.sa_handler = sigint_handler;
+                                sigemptyset(&action.sa_mask);
+                                action.sa_flags = 0;
+
+                                //Instalação do sigint_handler
+                                if (sigaction(SIGINT,&action,NULL) < 0){
+                                 fprintf(stderr,"Unable to install SIGINT handler\n");
+                                 exit(1);
+                               }
                                 pid_t pid = fork();
+                                //sleep(2);
 
                                 switch (pid) {
                                     case -1:
                                         return error_sys("fork error");
-                                    case 0:
+                                    case 0: // Filho
                                         {
                                             int std[2 /*3*/];
                                             if ((std[READ_PIPE] = dup(STDIN_FILENO)) == -1 || (std[WRITE_PIPE] = dup(STDOUT_FILENO)) == -1 /* || (std[LOG_FILE] = dup(log_file_fd)) == -1 */) {
@@ -192,7 +205,7 @@ int main(int argc, char *argv[]/*, char * envp[]*/) {
                                             }
                                         }
                                         break;
-                                    default:
+                                    default: // Pai
                                         {
                                             if (close(pipe_ctop[WRITE_PIPE]) || close(pipe_ctosp[WRITE_PIPE]) || close(pipe_ctosp[READ_PIPE])) {
                                                 return error_sys("close error upon closing pipe");
