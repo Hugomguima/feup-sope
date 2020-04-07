@@ -25,6 +25,9 @@ int set_time(struct timeval *it);
   */
 long double elapsed_time();
 
+
+int write_log_sign(char *log_action, long log_info, int pid);
+
 int write_log_timeval(char *log_action, struct timeval log_info);
 /**
  * @brief               Write an action to log
