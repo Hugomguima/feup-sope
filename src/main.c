@@ -222,6 +222,9 @@ int main(int argc, char *argv[]/*, char * envp[]*/) {
                                     case 0: // Filho
                                         {
                                             int std[3];
+                                            if(!subprocess){
+                                                setpgid (0,0);
+                                            }
                                             if ((std[READ_PIPE] = dup(STDIN_FILENO)) == -1 || (std[WRITE_PIPE] = dup(STDOUT_FILENO)) == -1) {
                                                 return error_sys("dup error upon copying stdin and stdout descriptors");
                                             }
