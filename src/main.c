@@ -241,7 +241,7 @@ int main(int argc, char *argv[]/*, char * envp[]*/) {
                                     case -1:
                                         exit_status = error_sys("fork error");
                                         return exit_status;
-                                    case 0:
+                                    case 0: //Filho
                                         {
                                             int std[3];
                                             if(!subprocess){

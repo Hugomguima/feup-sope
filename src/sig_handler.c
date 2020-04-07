@@ -29,28 +29,8 @@ void sigint_handler(int signo){
   (void) signo;
 
 
-  //pid_t pgid = getpgrp();
-  /*
-  if(setpgid(getpid(),0)){
-      printf("error");
-  }
-  */
+  if(check_process) killpg(globalProcess,SIGSTOP);  //Envia SIGSTOP para todos os subprocessos, se existirem
 
-  //FILE* saved_stdout,saved_stdout;
-
-  //Gravar o atual estado do STDOUT_FILENO:
-  //saved_stdout = dup(1);
-  //dup2(my_temporary_stdout_fd, STDOUT_FILENO);
-
-  //Restauração do atigo estado do STDOUT_FILENO;
-  //dup2(saved_stdout, 1);
-  //close(saved_stdout);
-
-  if(check_process) killpg(globalProcess,SIGSTOP);  //Envia a ele mesmo o sinal, porque é uncatchable
-
-  //killpg(pgid,SIGCONT);
-  //Deve enviar SIGSTOP para todos os processos filho
-  //kill com 0 no 1º parâmetro envia o sinal para todos os processos que possuem o mesmo PGID que o processo;
   write(STDOUT_FILENO,"\nAre you sure you want to exit the program?\n",44);
   write(STDOUT_FILENO,"Press 'y' to confirm, anything else otherwise\n",46);
 
@@ -62,4 +42,8 @@ void sigint_handler(int signo){
   else{
       if(check_process) killpg(globalProcess,SIGCONT); // Continua todos os processos parados anteriormente
   }
+}
+
+void sigcont_handler(int signo){
+    (void) signo;
 }
