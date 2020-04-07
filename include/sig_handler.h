@@ -3,4 +3,9 @@
 
 void sigint_handler(int signo);
 
+void setGlobalProcess(int pgid);
+
+void resetGlobalProcess(void);
+
+
 #endif /* end of include guard: SIG_HANDLER_H_INCLUDED */

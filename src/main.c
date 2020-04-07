@@ -26,8 +26,6 @@
 #define LOG_FILE    2
 
 
-int globalProcess = 0;
-
 int error_sys(char *error_msg) {
     char error[BUFFER_SIZE];
     sprintf(error, "%s\nError %d: %s\n", error_msg, errno, strerror(errno));
@@ -183,7 +181,7 @@ int main(int argc, char *argv[]/*, char * envp[]*/) {
 
 
                                 pid_t pid = fork();
-                                globalProcess = pid;
+
                                 //sleep(2);
 
                                 switch (pid) {
@@ -218,13 +216,21 @@ int main(int argc, char *argv[]/*, char * envp[]*/) {
                                         break;
                                     default: // Pai
                                         {
+
+                                            setGlobalProcess(pid);
+
                                             if (close(pipe_ctop[WRITE_PIPE]) || close(pipe_ctosp[WRITE_PIPE]) || close(pipe_ctosp[READ_PIPE])) {
                                                 return error_sys("close error upon closing pipe");
                                             }
 
-                                            if (waitpid(pid, &return_status, 0) == -1) {
-                                                return error_sys("waitpid error");
-                                            }
+                                            do {
+                                                if (waitpid(pid, &return_status, 0) == -1) {
+                                                    if (errno == EINTR) continue;
+                                                    return error_sys("waitpid error");
+                                                }
+                                                break;
+                                            } while (1);
+                                            resetGlobalProcess();
 
                                             int i = 0;
                                             while (new_argv[i] != NULL) {
