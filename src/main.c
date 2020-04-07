@@ -70,21 +70,21 @@ int main(int argc, char *argv[]/*, char * envp[]*/) {
 
     //Struct para dar handle a SIGINT
     struct sigaction action;
-    action.sa_handler = sigint_handler;
+    action.sa_handler = subprocess ? SIG_IGN : sigint_handler;
     sigemptyset(&action.sa_mask);
     action.sa_flags = 0;
 
+
+
     //Instalação do sigint_handler
-    if(!subprocess){
-      if (sigaction(SIGINT,&action,NULL) < 0){
-       fprintf(stderr,"Unable to install SIGINT handler\n");
-       exit(1);
-    }   
-   }
+
+    if (sigaction(SIGINT,&action,NULL) < 0){
+        fprintf(stderr,"Unable to install SIGINT handler\n");
+        exit(1);
+    }
 
     // error | path | max-depth | S | L | B | b | a | l
     int flags;
-
     parse_info_t info;
     init_parse_info(&info);
     flags = parse_cmd(argc - 1, &argv[1], &info);
