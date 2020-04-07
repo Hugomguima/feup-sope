@@ -10,13 +10,15 @@
 /* SIGNAL HEADERS */
 #include <signal.h>
 
+extern int globalProcess;
+
 //Handler para quando o processo pai recebe SIGINT
 void sigint_handler(int signo){
   char ch[256];
   (void) signo;
 
 
-  pid_t pgid = getpgrp();
+  //pid_t pgid = getpgrp();
   /*
   if(setpgid(getpid(),0)){
       printf("error");
@@ -33,7 +35,7 @@ void sigint_handler(int signo){
   //dup2(saved_stdout, 1);
   //close(saved_stdout);
 
-  killpg(pgid,SIGTSTP);  //Envia a ele mesmo o sinal, porque é uncatchable
+  killpg(globalProcess,SIGSTOP);  //Envia a ele mesmo o sinal, porque é uncatchable
 
   //killpg(pgid,SIGCONT);
   //Deve enviar SIGSTOP para todos os processos filho
@@ -43,9 +45,9 @@ void sigint_handler(int signo){
 
   int n = read(STDIN_FILENO,ch,256);
   if((n == 2 ) && (ch[0] == 'y')){
-      killpg(pgid,SIGTERM); // Termina todos os processos parados anteriormente
+      killpg(0,SIGTERM); // Termina todos os processos parados anteriormente
   }
   else{
-      killpg(pgid,SIGCONT); // Continua todos os processos parados anteriormente
+      killpg(globalProcess,SIGCONT); // Continua todos os processos parados anteriormente
   }
 }

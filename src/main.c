@@ -25,6 +25,9 @@
 #define WRITE_PIPE  1
 #define LOG_FILE    2
 
+
+int globalProcess = 0;
+
 int error_sys(char *error_msg) {
     char error[BUFFER_SIZE];
     sprintf(error, "%s\nError %d: %s\n", error_msg, errno, strerror(errno));
@@ -180,6 +183,7 @@ int main(int argc, char *argv[]/*, char * envp[]*/) {
 
 
                                 pid_t pid = fork();
+                                globalProcess = pid;
                                 //sleep(2);
 
                                 switch (pid) {
@@ -188,6 +192,9 @@ int main(int argc, char *argv[]/*, char * envp[]*/) {
                                     case 0: // Filho
                                         {
                                             int std[2 /*3*/];
+                                            if(!subprocess){
+                                                setpgid (0,0);
+                                            }
                                             if ((std[READ_PIPE] = dup(STDIN_FILENO)) == -1 || (std[WRITE_PIPE] = dup(STDOUT_FILENO)) == -1 /* || (std[LOG_FILE] = dup(log_file_fd)) == -1 */) {
                                                 return error_sys("dup error upon copying stdin and stdout descriptors");
                                             }
@@ -240,6 +247,7 @@ int main(int argc, char *argv[]/*, char * envp[]*/) {
                                             if (close(pipe_ctop[READ_PIPE])) {
                                                 return error_sys("close error upon closing pipe");
                                             }
+
                                         }
                                         break;
                                 }
