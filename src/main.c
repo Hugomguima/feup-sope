@@ -302,7 +302,8 @@ int main(int argc, char *argv[]/*, char * envp[]*/) {
                                             do {
                                                 if (waitpid(pid, &return_status, 0) == -1) {
                                                     if (errno == EINTR) continue;
-                                                    return error_sys("waitpid error");
+                                                    exit_status = error_sys("waitpid error");
+                                                    return exit_status;
                                                 }
                                                 break;
                                             } while (1);
