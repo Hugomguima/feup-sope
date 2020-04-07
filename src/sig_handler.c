@@ -13,12 +13,13 @@
 //Handler para quando o processo pai recebe SIGINT
 void sigint_handler(int signo){
   char ch[256];
+  (void) signo;
 
   pid_t pgid = getpgrp();
-  
+  if(setpgid(getpid(),0)){
+      printf("error");
+  }
 
-
-  (void) signo;
 
   //FILE* saved_stdout,saved_stdout;
 
@@ -29,7 +30,7 @@ void sigint_handler(int signo){
   //Restauração do atigo estado do STDOUT_FILENO;
   //dup2(saved_stdout, 1);
   //close(saved_stdout);
-  killpg(pgid,SIGSTOP);
+  //killpg(pgid,SIGSTOP);
 
   //killpg(pgid,SIGCONT);
   //Deve enviar SIGSTOP para todos os processos filho
