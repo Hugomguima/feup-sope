@@ -122,18 +122,12 @@ int main(int argc, char *argv[]/*, char * envp[]*/) {
     sigemptyset(&action.sa_mask);
     action.sa_flags = 0;
 
-<<<<<<< HEAD
     //Struct para dar handle a SIGTERM
     actionLog.sa_handler = siglog_handler;
     sigemptyset(&actionLog.sa_mask);
     actionLog.sa_flags = 0;
 
     //Instalação dos sigint_handler
-=======
-
-    //Instalação do sigint_handler
-    if(!subprocess) sigaddset(&action.sa_mask,SIGTSTP);
->>>>>>> 00cfd2a61483d2b494222fc931bd4e409a32c7b8
 
     if (sigaction(SIGINT,&action,NULL) < 0){
         fprintf(stderr,"Unable to install SIGINT handler\n");
