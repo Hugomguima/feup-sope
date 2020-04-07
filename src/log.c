@@ -107,6 +107,16 @@ int write_log_int(char *log_action, long log_info) {
     return 0;
 }
 
+int write_log_sign(char *log_action, long log_info, int pid) {
+    char buffer[256];
+    sprintf(buffer,"%10.2Lf\t%15d\t%15s\t%ld%d\n", elapsed_time(), getppid(), log_action, log_info, pid);
+    if(write(file_log, buffer, strlen(buffer)) == -1) {
+        return 1;
+    }
+
+    return 0;
+}
+
 int close_log() {
     if (close(file_log) != 0) {
         return 1;

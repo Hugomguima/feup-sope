@@ -120,8 +120,8 @@ int main(int argc, char *argv[]/*, char * envp[]*/) {
     sigemptyset(&action.sa_mask);
     action.sa_flags = 0;
 
-    //Instalação do sigint_handler
 
+    //Instalação do sigint_handler
     if(!subprocess) sigaddset(&action.sa_mask,SIGTSTP);
 
     if (sigaction(SIGINT,&action,NULL) < 0){
