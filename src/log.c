@@ -19,7 +19,6 @@ struct timeval init_time;
 int file_log;
 
 int init_log() {
-    printf("Here\n");
     if(getenv("LOG_FILENAME") != NULL) { // Write log to LOG_FILENAME
         file_log = open("LOG_FILENAME" , O_WRONLY | O_CREAT | O_TRUNC, DEFAULT_MODE);
     }
