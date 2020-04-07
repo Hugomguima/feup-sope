@@ -1,4 +1,5 @@
 #include "sig_handler.h"
+#include "log.h"
 
 /* C LIBRARY HEADERS */
 #include <stdlib.h>
@@ -23,43 +24,55 @@ void resetGlobalProcess(void){
     check_process = 0;
 }
 
+
 //Handler para quando o processo pai recebe SIGINT
 void sigint_handler(int signo){
-  char ch[256];
-  (void) signo;
+    write_log_int("RECV_SIGNAL", signo);
+    char ch[256];
 
+    if(check_process) {
+        write_log_sign("SEND_SIGNAL", SIGSTOP, globalProcess);
+        killpg(globalProcess, SIGSTOP);  //Envia SIGSTOP para todos os subprocessos, se existirem
+    }
+    write(STDOUT_FILENO,"\nAre you sure you want to exit the program?\n",44);
+    write(STDOUT_FILENO,"Press 'y' to confirm, anything else otherwise\n",46);
 
-  //pid_t pgid = getpgrp();
-  /*
-  if(setpgid(getpid(),0)){
-      printf("error");
-  }
-  */
+    int n = read(STDIN_FILENO,ch,256);
+    if((n == 2 ) && (ch[0] == 'y')){
+        if(check_process) {
+            write_log_sign("SEND_SIGNAL", SIGTERM, globalProcess);
+            killpg(globalProcess,SIGTERM); // Termina todos os processos parados anteriormente
+        }
+        raise(SIGTERM);
+    }
+    else{
+        if(check_process){
+            write_log_sign("SEND_SIGNAL", SIGSTOP, globalProcess);
+            killpg(globalProcess,SIGCONT); // Continua todos os processos parados anteriormente
+        }
+    }
+}
 
-  //FILE* saved_stdout,saved_stdout;
+void siglog_handler(int signo){
+    struct sigaction newHandler,oldHandler;
 
-  //Gravar o atual estado do STDOUT_FILENO:
-  //saved_stdout = dup(1);
-  //dup2(my_temporary_stdout_fd, STDOUT_FILENO);
+    newHandler.sa_handler = SIG_DFL;
+    sigemptyset(&newHandler.sa_mask);
+    newHandler.sa_flags = 0;
 
-  //Restauração do atigo estado do STDOUT_FILENO;
-  //dup2(saved_stdout, 1);
-  //close(saved_stdout);
+    if(signo == SIGTERM){
+        sigaction(SIGTERM,&newHandler,&oldHandler);
+        raise(signo);
+        sigaction(SIGTERM,&oldHandler,NULL);
+        printf("SIGTERM recebido!\n");
+        //ESCREVER PARA O LOG
+    }
+    else if(signo == SIGCONT){
+        sigaction(SIGCONT,&newHandler,&oldHandler);
+        raise(signo);
+        sigaction(SIGCONT,&oldHandler,NULL);
+        printf("SIGCONT recebido!\n");
+        //ESCREVER PARA O LOG
+    }
 
-  if(check_process) killpg(globalProcess,SIGSTOP);  //Envia a ele mesmo o sinal, porque é uncatchable
-
-  //killpg(pgid,SIGCONT);
-  //Deve enviar SIGSTOP para todos os processos filho
-  //kill com 0 no 1º parâmetro envia o sinal para todos os processos que possuem o mesmo PGID que o processo;
-  write(STDOUT_FILENO,"\nAre you sure you want to exit the program?\n",44);
-  write(STDOUT_FILENO,"Press 'y' to confirm, anything else otherwise\n",46);
-
-  int n = read(STDIN_FILENO,ch,256);
-  if((n == 2 ) && (ch[0] == 'y')){
-      if(check_process) killpg(globalProcess,SIGTERM); // Termina todos os processos parados anteriormente
-      raise(SIGTERM);
-  }
-  else{
-      if(check_process) killpg(globalProcess,SIGCONT); // Continua todos os processos parados anteriormente
-  }
 }
