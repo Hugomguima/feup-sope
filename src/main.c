@@ -114,20 +114,34 @@ int main(int argc, char *argv[]/*, char * envp[]*/) {
           }
     }
 
-    //Struct para dar handle a SIGINT
-    struct sigaction action;
+    //Structs para dar handle aos sinais
+    struct sigaction action,actionLog;
+
+    //Struct para dar handle a SIGIN
     action.sa_handler = subprocess ? SIG_IGN : sigint_handler;
     sigemptyset(&action.sa_mask);
     action.sa_flags = 0;
 
-    //Instalação do sigint_handler
+    //Struct para dar handle a SIGTERM
+    actionLog.sa_handler = siglog_handler;
+    sigemptyset(&actionLog.sa_mask);
+    actionLog.sa_flags = 0;
 
-    if(!subprocess) sigaddset(&action.sa_mask,SIGTSTP);
+    //Instalação dos sigint_handler
 
     if (sigaction(SIGINT,&action,NULL) < 0){
         fprintf(stderr,"Unable to install SIGINT handler\n");
         exit(1);
     }
+    if (sigaction(SIGTERM,&actionLog,NULL) < 0){
+        fprintf(stderr,"Unable to install SIGTERM handler\n");
+        exit(1);
+    }
+    if (sigaction(SIGCONT,&actionLog,NULL) < 0){
+        fprintf(stderr,"Unable to install SIGCONT handler\n");
+        exit(1);
+    }
+    //resetHandler(actionLog);
 
     // error | path | max-depth | S | L | B | b | a | l
     int flags;

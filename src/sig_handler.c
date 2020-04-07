@@ -23,6 +23,7 @@ void resetGlobalProcess(void){
     check_process = 0;
 }
 
+
 //Handler para quando o processo pai recebe SIGINT
 void sigint_handler(int signo){
   char ch[256];
@@ -44,10 +45,26 @@ void sigint_handler(int signo){
   }
 }
 
-void sigcont_handler(int signo){
-    (void) signo;
-}
+void siglog_handler(int signo){
+    struct sigaction newHandler,oldHandler;
 
-void sigtermn_handler(int signo){
-    (void) signo;
+    newHandler.sa_handler = SIG_DFL;
+    sigemptyset(&newHandler.sa_mask);
+    newHandler.sa_flags = 0;
+
+    if(signo == SIGTERM){
+        sigaction(SIGTERM,&newHandler,&oldHandler);
+        raise(signo);
+        sigaction(SIGTERM,&oldHandler,NULL);
+        printf("SIGTERM recebido!\n");
+        //ESCREVER PARA O LOG
+    }
+    else if(signo == SIGCONT){
+        sigaction(SIGCONT,&newHandler,&oldHandler);
+        raise(signo);
+        sigaction(SIGCONT,&oldHandler,NULL);
+        printf("SIGCONT recebido!\n");
+        //ESCREVER PARA O LOG
+    }
+
 }
