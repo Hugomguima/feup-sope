@@ -100,20 +100,20 @@ int main(int argc, char *argv[]/*, char * envp[]*/) {
         } else {
             log_file_fd = init_log();
             set_time(&init_time);
+        }
 
-            // Write commands passed as arguments
-            char buffer[BUFFER_SIZE];
-            for(int i = 0; i < argc; i++) {
-                strncat(buffer, argv[i], sizeof(char) * strlen(argv[i]));
-                strncat(buffer, " ", 1);
-            }
-            strncat(buffer, "\n", 1);
-            if (write_log("CREATE", buffer)) {
-                write(STDOUT_FILENO, "error upon writing log\n", 23);
-            }
-          }
+        // Write commands passed as arguments
+        char buffer[BUFFER_SIZE];
+        for(int i = 0; i < argc; i++) {
+            strncat(buffer, argv[i], sizeof(char) * strlen(argv[i]));
+            strncat(buffer, " ", 1);
+        }
+        strncat(buffer, "\n", 1);
+        if (write_log("CREATE", buffer)) {
+            write(STDOUT_FILENO, "error upon writing log\n", 23);
+        }
     }
-
+    
     //Structs para dar handle aos sinais
     struct sigaction action,actionLog;
 
