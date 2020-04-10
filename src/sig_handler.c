@@ -36,7 +36,7 @@ void sigint_handler(int signo){
     if(check_process) {
         write_log_sign("SEND_SIGNAL", "SIGSTOP", globalProcess);
         // Send sigstops for every subprocess
-        killpg(globalProcess, SIGSTOP);  
+        killpg(globalProcess, SIGSTOP);
     }
 
     write(STDOUT_FILENO,"\nAre you sure you want to exit the program?\n",44);
@@ -47,15 +47,15 @@ void sigint_handler(int signo){
         if(check_process) {
             write_log_sign("SEND_SIGNAL", "SIGTERM", globalProcess);
             // Shutdown previos process
-            killpg(globalProcess,SIGTERM); 
+            killpg(globalProcess,SIGTERM);
         }
         raise(SIGTERM);
     }
     else{
         if(check_process){
-            write_log_sign("SEND_SIGNAL", "SIGSTOP", globalProcess);
+            write_log_sign("SEND_SIGNAL", "SIGCONT", globalProcess);
             // Continue all previous stopped processes
-            killpg(globalProcess,SIGCONT); 
+            killpg(globalProcess,SIGCONT);
         }
     }
 }
