@@ -24,7 +24,7 @@ Every functionality mentioned bellow is full working.
 - [x] shows the space occupied in number of blocks of 1024 bytes
 - [x] only lists directories
 - [x] does not follow symbolic links
-- [x] counts each file only once
+- [ ] counts each file only once
 - [x] cumulatively displays the size of included subdirectories and files
 - [x] does not restrict the depth levels in the directory structure
 
@@ -71,7 +71,6 @@ Every functionality mentioned bellow is full working.
 
 # Precision errors
 
-- We use `gettimeofday()` to get the clock time. On our system this clock have µs precision, but this is not guaranteed. We used this function instead of using `clock()` because in our system, the first one provided us more accuracy than the second one. 
+- We use `gettimeofday()` to get the clock time. On our system this clock have µs precision, but this is not guaranteed. We used this function instead of using `clock()` because in our system, the first one provided us more accuracy than the second one.
 
 - The results of command simpledu when the flag -B / --block-size is set can have some imprecisions.
-

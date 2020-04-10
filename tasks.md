@@ -28,35 +28,35 @@
 - [x] The parent process (first to be executed) must always wait for the termination of all child processes before finishing its execution
 - [x] use the same code (without changes) regardless of being the main process or not
 - [x] the total size of each of the subdirectories must be communicated to the parent process through a pipe (without a name) created for each of the child processes
-- [ ] the parent process must send a `SIGSTOP` signal to all child processes that are running when it receives a SIGINT signal  
+- [x] the parent process must send a `SIGSTOP` signal to all child processes that are running when it receives a SIGINT signal  
   The sending of the next signal depends on the confirmation (`SIGTERM`) or not (`SIGCONT`) by the user regarding the termination of the program
 
 ## Functional requirements
-- [ ] Logs
+- [x] Logs
 - Logs functionalities
-  - [ ] Log creation and termination of processes
-  - [ ] Log sent and received signals
-  - [ ] Log sent and received data from pipes
+  - [x] Log creation and termination of processes
+  - [x] Log sent and received signals
+  - [x] Log sent and received data from pipes
   - [ ] Log files and directories analysed by each process
   - Output format: `instant - pid - action - info`
-    - [ ] instant - time immediately preceding the record, measured in milliseconds and to 2 decimal places, with reference to the time when the program started executing
-    - [ ] pid - process identifier that registers the line, with a fixed space for 8 digits
-    - [ ] action - description of the type of event: `CREATE`, `EXIT`, `RECV_SIGNAL`, `SEND_SIGNAL`, `RECV_PIPE`, `SEND_PIPE` and `ENTRY`
+    - [x] instant - time immediately preceding the record, measured in milliseconds and to 2 decimal places, with reference to the time when the program started executing
+    - [x] pid - process identifier that registers the line, with a fixed space for 8 digits
+    - [x] action - description of the type of event: `CREATE`, `EXIT`, `RECV_SIGNAL`, `SEND_SIGNAL`, `RECV_PIPE`, `SEND_PIPE` and `ENTRY`
     - info - additional information for each of the actions
-      - [ ] `CREATE` - the command line arguments
-      - [ ] `EXIT` – exit status
-      - [ ] `RECV_SIGNAL` - the received signal (for example, `SIGINT`)
-      - [ ] `SEND_SIGNAL` - the signal sent followed by the pid of the process for which it is intended
-      - [ ] `RECV_PIPE` - the message sent
-      - [ ] `SEND_PIPE` - the message received
-      - [ ] `ENTRY` - number of bytes (or blocks) followed by the path
+      - [x] `CREATE` - the command line arguments
+      - [x] `EXIT` – exit status
+      - [x] `RECV_SIGNAL` - the received signal (for example, `SIGINT`)
+      - [x] `SEND_SIGNAL` - the signal sent followed by the pid of the process for which it is intended
+      - [x] `RECV_PIPE` - the message sent
+      - [x] `SEND_PIPE` - the message received
+      - [x] `ENTRY` - number of bytes (or blocks) followed by the path
 
 ## Additional Features
 #### Interruption by the user
 - When user sends `SIGINT` signal (`CTRL + C`):
-  - [ ] Entire program suspended
+  - [x] Entire program suspended
   - Upon confirmation of termination
-    - [ ] Finish all pending operations
-    - [ ] End program
+    - [x] Finish all pending operations
+    - [x] End program
   - Upon confirmation of continuation
-    - [ ] Resume operations immediately
+    - [x] Resume operations immediately
