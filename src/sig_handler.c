@@ -15,6 +15,7 @@
 int globalProcess = 0;
 int check_process = 0;
 
+
 void setGlobalProcess(int pgid){
     globalProcess = pgid;
     check_process = 1;
@@ -46,7 +47,7 @@ void sigint_handler(int signo){
     if((n == 2 ) && (ch[0] == 'y')){
         if(check_process) {
             write_log_sign("SEND_SIGNAL", "SIGTERM", globalProcess);
-            // Shutdown previos process
+            // Shutdown previous process
             killpg(globalProcess,SIGTERM);
         }
         raise(SIGTERM);
