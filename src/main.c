@@ -150,7 +150,7 @@ int main(int argc, char *argv[]/*, char * envp[]*/) {
     flags = parse_cmd(argc - 1, &argv[1], &info);
 
     if (flags & FLAG_ERR) {
-        free_pointers(1, info.path);
+        free_parse_info(&info);
         exit_status = -1;
         return exit_status;
     }
@@ -159,23 +159,26 @@ int main(int argc, char *argv[]/*, char * envp[]*/) {
     int block_size;
     int max_depth;
 
-    path = (flags & FLAG_PATH) ? info.path : ".";
     block_size = (flags & FLAG_BSIZE) ? info.block_size : 1024;
     max_depth = (flags & FLAG_MAXDEPTH) ? info.max_depth - subprocess : -1;
 
     struct stat status;
 
-    if (fget_status(path, &status, flags & FLAG_DEREF)) {
-        free_pointers(1, info.path);
-        exit_status = -1;
-        return exit_status;
-    }
+    for (int path_index = 0; path_index < info.paths_size; path_index++) {
 
-    file_type_t ftype = sget_type(&status);
-    double fsize = fget_size(flags & FLAG_BYTES, &status, block_size);
+        path = info.paths[path_index];
 
-    switch (ftype) {
-        case FTYPE_REG:
+        if (fget_status(path, &status, flags & FLAG_DEREF)) {
+            free_parse_info(&info);
+            exit_status = -1;
+            return exit_status;
+        }
+
+        file_type_t ftype = sget_type(&status);
+        double fsize = fget_size(flags & FLAG_BYTES, &status, block_size);
+
+        switch (ftype) {
+            case FTYPE_REG:
             {
                 char buffer[BUFFER_SIZE];
                 sprintf(buffer, "%ld""\x9""%s\n", dceill(fsize), path);
@@ -183,7 +186,7 @@ int main(int argc, char *argv[]/*, char * envp[]*/) {
                 write(STDOUT_FILENO, buffer, strlen(buffer));
             }
             break;
-        case FTYPE_DIR:
+            case FTYPE_DIR:
             {
                 DIR *dir;
 
@@ -214,161 +217,164 @@ int main(int argc, char *argv[]/*, char * envp[]*/) {
                     double new_fsize;
                     switch (new_type) {
                         case FTYPE_REG:
+                        new_fsize = fget_size(flags & FLAG_BYTES, &new_status, block_size);
+                        fsize += new_fsize;
+                        if ((flags & FLAG_ALL) && ((flags & FLAG_MAXDEPTH) == 0 || max_depth > 0)) {
+                            char buffer[BUFFER_SIZE];
+                            sprintf(buffer, "%ld""\x9""%s\n", dceill(new_fsize), new_path);
+                            if (write_log("ENTRY", buffer)) {
+                                write(STDOUT_FILENO, "error upon writing log\n", 23);
+                            }
+                            write(STDOUT_FILENO, buffer, strlen(buffer));
+
+                        }
+                        break;
+                        case FTYPE_DIR:
+                        {
+                            // Build command line arguments
+                            parse_info_t new_info;
+                            init_parse_info(&new_info);
+                            parse_info_addpath(&new_info, new_path);
+                            new_info.block_size = block_size;
+                            new_info.max_depth = (max_depth > 0) ? max_depth : 0;
+
+                            char **new_argv = build_argv(argv[0], flags, &new_info);
+
+                            free_parse_info(&new_info);
+
+                            int pipe_ctosp[2];  // Pipe child to subprocess
+                            int pipe_ctop[2];   // Pipe child to parent
+
+                            int return_status;
+
+                            if (pipe(pipe_ctosp) || pipe(pipe_ctop)) {
+                                exit_status = error_sys("pipe error");
+                                return exit_status;
+                            }
+
+
+                            pid_t pid = fork();
+
+                            //sleep(2);
+
+                            switch (pid) {
+                                case -1:
+                                exit_status = error_sys("fork error");
+                                return exit_status;
+                                case 0: //Filho
+                                {
+                                    int std[3];
+                                    if(!subprocess){
+                                        setpgid (0,0);
+                                    }
+                                    if ((std[READ_PIPE] = dup(STDIN_FILENO)) == -1 || (std[WRITE_PIPE] = dup(STDOUT_FILENO)) == -1) {
+                                        exit_status = error_sys("dup error upon copying stdin and stdout descriptors");
+                                        return exit_status;
+                                    }
+                                    if((std[LOG_FILE] = dup(log_file_fd)) == -1) {
+                                        exit_status = error_sys("dup error upon copying log_file_fd");
+                                        return exit_status;
+                                    }
+                                    if (write(pipe_ctosp[WRITE_PIPE], std, sizeof(int) * 3) == -1) {
+                                        exit_status = error_sys("write error to subprocess connection pipe");
+                                        return exit_status;
+                                    }
+                                    // write timeval to pipe
+                                    if (write(pipe_ctosp[WRITE_PIPE], &init_time, sizeof(init_time)) == -1){
+                                        exit_status = error_sys("write error to subprocess connection pipe");
+                                        return exit_status;
+                                    }
+                                    // write log  of std
+                                    if (write_log_array("SEND_PIPE", std, 3) || write_log_timeval("SEND_PIPE", init_time)) {
+                                        write(STDOUT_FILENO, "error upon writing log\n", 23);
+                                    }
+                                    if (close(pipe_ctop[READ_PIPE]) || close(pipe_ctosp[WRITE_PIPE])) {
+                                        exit_status = error_sys("close error upon closing pipe");
+                                        return exit_status;
+                                    }
+
+                                    if (dup2(pipe_ctop[WRITE_PIPE], STDOUT_FILENO) == -1 || dup2(pipe_ctosp[READ_PIPE], STDIN_FILENO) == -1) {
+                                        exit_status = error_sys("dup2 error upon redefining descriptors pointed by stdin and stdout");
+                                        return exit_status;
+                                    }
+
+                                    if (close(pipe_ctop[WRITE_PIPE]) || close(pipe_ctosp[READ_PIPE])) {
+                                        exit_status = error_sys("close error upon closing pipe");
+                                        return exit_status;
+                                    }
+
+                                    if (execv(argv[0], new_argv) == -1) {
+                                        exit_status = error_sys("execv error");
+                                        return exit_status;
+                                    }
+                                }
+                                break;
+                                default: // Pai
+                                {
+
+                                    setGlobalProcess(pid);
+
+                                    if (close(pipe_ctop[WRITE_PIPE]) || close(pipe_ctosp[WRITE_PIPE]) || close(pipe_ctosp[READ_PIPE])) {
+                                        exit_status = error_sys("close error upon closing pipe");
+                                        return exit_status;
+                                    }
+
+                                    do {
+                                        if (waitpid(pid, &return_status, 0) == -1) {
+                                            if (errno == EINTR) continue;
+                                            exit_status = error_sys("waitpid error");
+                                            return exit_status;
+                                        }
+                                        break;
+                                    } while (1);
+                                    resetGlobalProcess();
+
+                                    int i = 0;
+                                    while (new_argv[i] != NULL) {
+                                        free(new_argv[i]);
+                                        i++;
+                                    }
+                                    free(new_argv);
+
+                                    if (WIFEXITED(return_status) && WEXITSTATUS(return_status) == 0) {
+                                        double subdir_size = 0;
+                                        if (read(pipe_ctop[READ_PIPE], &subdir_size, sizeof(double)) == -1) {
+                                            exit_status = error_sys("write error upon reading from child connection pipe");
+                                            return exit_status;
+                                        }
+                                        if(write_log_int("RECV_PIPE", subdir_size)) { // SAMU TROCA PARA DOUBLE
+                                            write(STDOUT_FILENO, "error upon writing log\n", 23);
+                                        }
+
+                                        fsize += (flags & FLAG_SEPDIR) ? 0 : subdir_size;
+
+                                        if (close(pipe_ctop[READ_PIPE])) {
+                                            exit_status = error_sys("close error upon closing pipe");
+                                            return exit_status;
+                                        }
+                                    }
+
+                                }
+                                break;
+                            }
+                        }
+                        break;
+                        case FTYPE_LINK:
+                        {
                             new_fsize = fget_size(flags & FLAG_BYTES, &new_status, block_size);
                             fsize += new_fsize;
                             if ((flags & FLAG_ALL) && ((flags & FLAG_MAXDEPTH) == 0 || max_depth > 0)) {
                                 char buffer[BUFFER_SIZE];
                                 sprintf(buffer, "%ld""\x9""%s\n", dceill(new_fsize), new_path);
-                                if (write_log("ENTRY", buffer)) {
+                                if(write_log("ENTRY", buffer)) {
                                     write(STDOUT_FILENO, "error upon writing log\n", 23);
                                 }
                                 write(STDOUT_FILENO, buffer, strlen(buffer));
-
                             }
-                            break;
-                        case FTYPE_DIR:
-                            {
-                                // Build command line arguments
-                                parse_info_t new_info;
-                                new_info.path = new_path;
-                                new_info.block_size = block_size;
-                                new_info.max_depth = (max_depth > 0) ? max_depth : 0;
-
-                                char **new_argv = build_argv(argv[0], flags, &new_info);
-
-                                int pipe_ctosp[2];  // Pipe child to subprocess
-                                int pipe_ctop[2];   // Pipe child to parent
-
-                                int return_status;
-
-                                if (pipe(pipe_ctosp) || pipe(pipe_ctop)) {
-                                    exit_status = error_sys("pipe error");
-                                    return exit_status;
-                                }
-
-
-                                pid_t pid = fork();
-
-                                //sleep(2);
-
-                                switch (pid) {
-                                    case -1:
-                                        exit_status = error_sys("fork error");
-                                        return exit_status;
-                                    case 0: //Filho
-                                        {
-                                            int std[3];
-                                            if(!subprocess){
-                                                setpgid (0,0);
-                                            }
-                                            if ((std[READ_PIPE] = dup(STDIN_FILENO)) == -1 || (std[WRITE_PIPE] = dup(STDOUT_FILENO)) == -1) {
-                                                exit_status = error_sys("dup error upon copying stdin and stdout descriptors");
-                                                return exit_status;
-                                            }
-                                            if((std[LOG_FILE] = dup(log_file_fd)) == -1) {
-                                                exit_status = error_sys("dup error upon copying log_file_fd");
-                                                return exit_status;
-                                            }
-                                            if (write(pipe_ctosp[WRITE_PIPE], std, sizeof(int) * 3) == -1) {
-                                                exit_status = error_sys("write error to subprocess connection pipe");
-                                                return exit_status;
-                                            }
-                                            // write timeval to pipe
-                                            if (write(pipe_ctosp[WRITE_PIPE], &init_time, sizeof(init_time)) == -1){
-                                                exit_status = error_sys("write error to subprocess connection pipe");
-                                                return exit_status;
-                                            }
-                                            // write log  of std
-                                            if (write_log_array("SEND_PIPE", std, 3) || write_log_timeval("SEND_PIPE", init_time)) {
-                                                write(STDOUT_FILENO, "error upon writing log\n", 23);
-                                            }
-                                            if (close(pipe_ctop[READ_PIPE]) || close(pipe_ctosp[WRITE_PIPE])) {
-                                                exit_status = error_sys("close error upon closing pipe");
-                                                return exit_status;
-                                            }
-
-                                            if (dup2(pipe_ctop[WRITE_PIPE], STDOUT_FILENO) == -1 || dup2(pipe_ctosp[READ_PIPE], STDIN_FILENO) == -1) {
-                                                exit_status = error_sys("dup2 error upon redefining descriptors pointed by stdin and stdout");
-                                                return exit_status;
-                                            }
-
-                                            if (close(pipe_ctop[WRITE_PIPE]) || close(pipe_ctosp[READ_PIPE])) {
-                                                exit_status = error_sys("close error upon closing pipe");
-                                                return exit_status;
-                                            }
-
-                                            if (execv(argv[0], new_argv) == -1) {
-                                                exit_status = error_sys("execv error");
-                                                return exit_status;
-                                            }
-                                        }
-                                        break;
-                                    default: // Pai
-                                        {
-
-                                            setGlobalProcess(pid);
-
-                                            if (close(pipe_ctop[WRITE_PIPE]) || close(pipe_ctosp[WRITE_PIPE]) || close(pipe_ctosp[READ_PIPE])) {
-                                                exit_status = error_sys("close error upon closing pipe");
-                                                return exit_status;
-                                            }
-
-                                            do {
-                                                if (waitpid(pid, &return_status, 0) == -1) {
-                                                    if (errno == EINTR) continue;
-                                                    exit_status = error_sys("waitpid error");
-                                                    return exit_status;
-                                                }
-                                                break;
-                                            } while (1);
-                                            resetGlobalProcess();
-
-                                            int i = 0;
-                                            while (new_argv[i] != NULL) {
-                                                free(new_argv[i]);
-                                                i++;
-                                            }
-                                            free(new_argv);
-
-                                            if (WIFEXITED(return_status) && WEXITSTATUS(return_status) == 0) {
-                                                double subdir_size = 0;
-                                                if (read(pipe_ctop[READ_PIPE], &subdir_size, sizeof(double)) == -1) {
-                                                    exit_status = error_sys("write error upon reading from child connection pipe");
-                                                    return exit_status;
-                                                }
-                                                if(write_log_int("RECV_PIPE", subdir_size)) { // SAMU TROCA PARA DOUBLE
-                                                    write(STDOUT_FILENO, "error upon writing log\n", 23);
-                                                }
-
-                                                fsize += (flags & FLAG_SEPDIR) ? 0 : subdir_size;
-
-                                                if (close(pipe_ctop[READ_PIPE])) {
-                                                    exit_status = error_sys("close error upon closing pipe");
-                                                    return exit_status;
-                                                }
-                                            }
-
-                                        }
-                                        break;
-                                }
-                            }
-                            break;
-                        case FTYPE_LINK:
-                            {
-                                new_fsize = fget_size(flags & FLAG_BYTES, &new_status, block_size);
-                                fsize += new_fsize;
-                                if ((flags & FLAG_ALL) && ((flags & FLAG_MAXDEPTH) == 0 || max_depth > 0)) {
-                                    char buffer[BUFFER_SIZE];
-                                    sprintf(buffer, "%ld""\x9""%s\n", dceill(new_fsize), new_path);
-                                    if(write_log("ENTRY", buffer)) {
-                                        write(STDOUT_FILENO, "error upon writing log\n", 23);
-                                    }
-                                    write(STDOUT_FILENO, buffer, strlen(buffer));
-                                }
-                           }
-                           break;
+                        }
+                        break;
                         default:
-                            break;
+                        break;
                     }
 
                 }
@@ -398,7 +404,7 @@ int main(int argc, char *argv[]/*, char * envp[]*/) {
                 }
             }
             break;
-        case FTYPE_LINK:
+            case FTYPE_LINK:
             {
                 // Dereference symbolic link if flag is set
                 char buffer[BUFFER_SIZE];
@@ -407,10 +413,11 @@ int main(int argc, char *argv[]/*, char * envp[]*/) {
                     write(STDOUT_FILENO, "error upon writing log", 22);
                 }
                 write(STDOUT_FILENO, buffer, strlen(buffer));
-           }
-           break;
-        default:
+            }
             break;
+            default:
+            break;
+        }
     }
 
     if (subprocess) {
@@ -422,11 +429,11 @@ int main(int argc, char *argv[]/*, char * envp[]*/) {
 
 
     // free memory
-    free_pointers(1, info.path);
+    free_parse_info(&info);
 
     // Close log file
     /*if(subprocess == 0) {
-      close_log();
+        close_log();
     }*/
     exit_status = 0;
     return 0;

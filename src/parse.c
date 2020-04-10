@@ -13,9 +13,27 @@
 #include <string.h>
 
 void init_parse_info(parse_info_t *info) {
-    info->path = NULL;
+    info->paths = NULL;
+    info->paths_size = 0;
+    info->paths_memsize = 0;
     info->block_size = 0;
     info->max_depth = 0;
+}
+
+void free_parse_info(parse_info_t *info) {
+    if (info == NULL) return;
+    for (int i = 0; i < info->paths_size; i++) {
+        if (info->paths[i] != NULL) free(info->paths[i]);
+    }
+}
+
+void parse_info_addpath(parse_info_t *info, char *path) {
+    if (info->paths_size == info->paths_memsize) {
+        info->paths_memsize *= 2;
+        info->paths = (char**)realloc(info->paths, sizeof(char*) * info->paths_memsize);
+    }
+
+    info->paths[info->paths_size++] = strdup(path);
 }
 
 char** build_argv(char *argv0, int flags, parse_info_t *info) {
@@ -24,7 +42,8 @@ char** build_argv(char *argv0, int flags, parse_info_t *info) {
     for (int i = 0, k = 1; i < 7; i++, k <<= 1) { // ignore path flag
         n += ((flags & k) != 0); // add space for each flag activated
     }
-    n = n + 2; // add space for path and for null pointer
+    n = n + info->paths_size; // add space for paths
+    n = n + 1; // add space for null pointer
     char **cmd = (char**)malloc(sizeof(char*) * n);
 
     cmd[0] = strdup(argv0);
@@ -54,7 +73,9 @@ char** build_argv(char *argv0, int flags, parse_info_t *info) {
         sprintf(num, "%d", info->max_depth);
         cmd[i++] = str_cat("--max-depth=", num, strlen(num));
     }
-    cmd[i++] = strdup(info->path);
+    for (int j = 0; j < info->paths_size; j++) {
+        cmd[i++] = strdup(info->paths[j]);
+    }
     cmd[i] = NULL;
 
     return cmd;
@@ -77,6 +98,9 @@ int parse_cmd(int argc, char *argv[], parse_info_t *info) {
     }
 
     flags |= FLAG_LINKS;
+
+    info->paths_memsize = 1;
+    info->paths = (char**)malloc(sizeof(char*) * info->paths_memsize);
 
     for (int i = 1; i < argc; i++) {
         if (strcmp(argv[i], "--all") == 0) {
@@ -124,12 +148,6 @@ int parse_cmd(int argc, char *argv[], parse_info_t *info) {
 
             if (strlen(tmp) == 0) { // verify if it's valid path
 
-                if (flags & FLAG_PATH) {
-                    write(STDERR_FILENO, "Repeated flag: path\n", 20);
-                    flags |= FLAG_ERR;
-                    return flags;
-                }
-
                 struct stat status;
 
                 if (fget_status(argv[i], &status, 0) == -1) {
@@ -137,8 +155,8 @@ int parse_cmd(int argc, char *argv[], parse_info_t *info) {
                     return flags;
                 }
 
-                info->path = strdup(argv[i]);
-                if (rtrim(info->path, '/', MODE_RMDUP)) {
+                parse_info_addpath(info, argv[i]);
+                if (rtrim(info->paths[info->paths_size - 1], '/', MODE_RMDUP)) {
                     write(STDERR_FILENO, "Error trimming path\n", 20);
                     flags |= FLAG_ERR;
                     return flags;
@@ -185,13 +203,6 @@ int parse_cmd(int argc, char *argv[], parse_info_t *info) {
             }
         }
         else { // verify if it's valid path
-
-            if (flags & FLAG_PATH) {
-                write(STDERR_FILENO, "Repeated flag: path\n", 20);
-                flags |= FLAG_ERR;
-                return flags;
-            }
-
             struct stat status;
 
             if (fget_status(argv[i], &status, 0) == -1) {
@@ -199,14 +210,18 @@ int parse_cmd(int argc, char *argv[], parse_info_t *info) {
                 return flags;
             }
 
-            info->path = strdup(argv[i]);
-            if (rtrim(info->path, '/', MODE_RMDUP)) {
+            parse_info_addpath(info, argv[i]);
+            if (rtrim(info->paths[info->paths_size - 1], '/', MODE_RMDUP)) {
                 write(STDERR_FILENO, "Error trimming path\n", 20);
                 flags |= FLAG_ERR;
                 return flags;
             }
             flags |= FLAG_PATH;
         }
+    }
+
+    if (info->paths_size == 0) {
+        parse_info_addpath(info, ".");
     }
 
 

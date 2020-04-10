@@ -29,12 +29,18 @@ typedef struct parse_info parse_info_t;
  * @brief Information to be filled in parse_cmd
  */
 struct parse_info {
-    char    *path;
-    int      block_size;
-    int      max_depth;
+    char    **paths;
+    int       paths_size;
+    int       paths_memsize;
+    int       block_size;
+    int       max_depth;
 };
 
 void init_parse_info(parse_info_t *info);
+
+void free_parse_info(parse_info_t *info);
+
+void parse_info_addpath(parse_info_t *info, char *path);
 
 /**
  * Builds array argv needed to execute this program
