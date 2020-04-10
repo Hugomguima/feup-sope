@@ -11,7 +11,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-//temp
+// temp
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -53,7 +53,7 @@ int rtrim(char *str, char trimmed, int mode) {
     return 0;
 }
 
-char** str_split(const char *str, const char *delim) {
+char **str_split(const char *str, const char *delim) {
     if (str == NULL || delim == NULL) return NULL;
 
     char **result = NULL;
@@ -61,29 +61,29 @@ char** str_split(const char *str, const char *delim) {
     int pos = 0;
     char *dup = strdup(str);
 
-    while ((pos = str_find(dup, delim, pos)) != -1) { // while there's matches
-    count++;
-}
-
-count += 2; // add one for last group and one for NULL pointer
-
-result = (char**)malloc(sizeof(char*) * count);
-
-if (result != NULL) {
-    int index = 0;
-    char *token = strtok(dup, delim);
-
-    while (token) {
-        assert(index < count);
-        *(result + index++) = strdup(token);
-        token = strtok(NULL, delim);
+    while ((pos = str_find(dup, delim, pos)) != -1) {  // while there's matches
+        count++;
     }
 
-    assert(index == count - 1);
-    *(result + index) = NULL;
-}
+    count += 2;  // add one for last group and one for NULL pointer
 
-return result;
+    result = (char **)malloc(sizeof(char *) * count);
+
+    if (result != NULL) {
+        int index = 0;
+        char *token = strtok(dup, delim);
+
+        while (token) {
+            assert(index < count);
+            *(result + index++) = strdup(token);
+            token = strtok(NULL, delim);
+        }
+
+        assert(index == count - 1);
+        *(result + index) = NULL;
+    }
+
+    return result;
 }
 
 int str_isDigit(const char *str) {
@@ -92,7 +92,7 @@ int str_isDigit(const char *str) {
     int i = 0;
     char ch;
     while ((ch = str[i++]) != 0)
-    if (ch < '0' || ch > '9') return 0;
+        if (ch < '0' || ch > '9') return 0;
 
     return 1;
 }
@@ -103,16 +103,16 @@ int str_isAlpha(const char *str) {
     int i = 0;
     char ch;
     while ((ch = str[i++]) != 0)
-    if (!((ch >= 'A' && ch <= 'Z') || (ch >= 'a' && ch <= 'z'))) return 0;
+        if (!((ch >= 'A' && ch <= 'Z') || (ch >= 'a' && ch <= 'z'))) return 0;
 
     return 1;
 }
 
-char* str_cat(char *s1, char *s2, int n) {
+char *str_cat(char *s1, char *s2, int n) {
     int len1 = (int)strlen(s1);
     int len2 = (n < (int)strlen(s2)) ? n : (int)strlen(s2);
 
-    char *res = (char*)malloc(sizeof(char) * (len1 + len2 + 1));
+    char *res = (char *)malloc(sizeof(char) * (len1 + len2 + 1));
 
     if (res == NULL) {
         char *error = strerror(errno);
@@ -138,7 +138,7 @@ char* str_cat(char *s1, char *s2, int n) {
 /*----------------------------------------------------------------------------*/
 
 int fget_status(const char *path, struct stat *pstat, int deref_sym) {
-    if(deref_sym) { // If -L is set, then dereference the symbolic link
+    if (deref_sym) {  // If -L is set, then dereference the symbolic link
         if (stat(path, pstat) == -1) {
             printf("here");
             char *error = strerror(errno);
@@ -146,8 +146,7 @@ int fget_status(const char *path, struct stat *pstat, int deref_sym) {
             write(STDERR_FILENO, "\n", 1);
             return -1;
         }
-    }
-    else {
+    } else {
         if (lstat(path, pstat) == -1) {
             char *error = strerror(errno);
             write(STDERR_FILENO, error, strlen(error));
@@ -171,21 +170,21 @@ file_type_t fget_type(const char *path, int deref_sym) {
 file_type_t sget_type(const struct stat *pstat) {
     switch (pstat->st_mode & S_IFMT) {
         case S_IFREG:
-        return FTYPE_REG;
+            return FTYPE_REG;
         case S_IFDIR:
-        return FTYPE_DIR;
+            return FTYPE_DIR;
         case S_IFCHR:
-        return FTYPE_CHR;
+            return FTYPE_CHR;
         case S_IFBLK:
-        return FTYPE_BLOCK;
+            return FTYPE_BLOCK;
         case S_IFLNK:
-        return FTYPE_LINK;
+            return FTYPE_LINK;
         case S_IFIFO:
-        return FTYPE_FIFO;
+            return FTYPE_FIFO;
         case S_IFSOCK:
-        return FTYPE_SOCKET;
+            return FTYPE_SOCKET;
         default:
-        return FTYPE_UNKNOWN;
+            return FTYPE_UNKNOWN;
     }
 }
 
@@ -194,7 +193,7 @@ double fget_size(int bytes, struct stat *status, int block_size) {
     if (bytes) {
         fsize = status->st_size;
     } else {
-        fsize = (status->st_blocks) * (512.0 / (double) block_size);
+        fsize = (status->st_blocks) * (512.0 / (double)block_size);
     }
     return fsize;
 }
@@ -203,6 +202,4 @@ double fget_size(int bytes, struct stat *status, int block_size) {
 /*                              MATH FUNCTIONS                                */
 /*----------------------------------------------------------------------------*/
 
-long dceill(double x) {
-    return ((x - (long)x) > 0) ? (long)(x + 1) : (long)x;
-}
+long dceill(double x) { return ((x - (long)x) > 0) ? (long)(x + 1) : (long)x; }

@@ -58,7 +58,6 @@ int write_log_timeval(char *log_action, struct timeval log_info);
  */
 int write_log_array(char *log_action, int *info, int size);
 
-
 /**
  * @brief               Write an action to log
  * @param log_action    Description of type of event
@@ -81,7 +80,7 @@ int write_log_double(char *log_action, double log_info);
  * @param pid           PID of global process
  * @return              0 uppon sucess or 1 otherwhise
  */
-int write_log_sign(char *log_action, char * log_info, int pid);
+int write_log_sign(char *log_action, char *log_info, int pid);
 
 /**
  * @brief           Close log file
