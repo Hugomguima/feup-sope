@@ -62,7 +62,7 @@ void sigint_handler(int signo){
 
 void siglog_handler(int signo){
     if(signo == SIGTERM){
-        write_log_int("RECV_SIGNAL", "SIGTERM\n");
+        write_log("RECV_SIGNAL", "SIGTERM\n");
 
         struct sigaction newHandler;
 
@@ -73,7 +73,7 @@ void siglog_handler(int signo){
         raise(SIGTERM);
     }
     else if(signo == SIGCONT){
-        write_log_int("RECV_SIGNAL", "SIGCONT\n");
+        write_log("RECV_SIGNAL", "SIGCONT\n");
     }
 
 }
