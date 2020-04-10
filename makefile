@@ -42,7 +42,7 @@ $(LDIR)/lib.a: $(DEPS)
 
 $(BDIR)/$(TARGET): makelib $(ODIR)/$(MAIN)
 	$(CC) $(CFLAGS) -o $@ $(word 2, $^) $(DEPS)
-	ln -s $@ $(TARGET)
+	ln -fs $@ $(TARGET)
 
 makefolders:
 	mkdir -p $(LDIR)

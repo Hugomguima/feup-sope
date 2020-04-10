@@ -1,8 +1,8 @@
-/* MAIND HEARDER */
+/* MAIN HEADER */
 #include "log.h"
 
 /* INCLUDE HEADERS */
-#include <utils.h>
+#include "utils.h"
 
 /* SYSTEM CALLS HEADERS */
 #include <fcntl.h>
@@ -49,14 +49,12 @@ int init_log() {
     return file_log;
 }
 
-int set_log_descriptor(int descriptor) {
+void set_log_descriptor(int descriptor) {
     file_log = descriptor;
-    return 0;
 }
 
-int set_time(struct timeval *it) {
+void set_time(struct timeval *it) {
   init_time = *it;
-  return 0;
 }
 
 
@@ -114,9 +112,9 @@ int write_log_int(char *log_action, long log_info) {
     return 0;
 }
 
-int write_log_sign(char *log_action, long log_info, int pid) {
+int write_log_sign(char *log_action, char* log_info, int pid) {
     char buffer[256];
-    sprintf(buffer,"%10.2Lf\t%15d\t%15s\t%ld%d\n", elapsed_time(), getppid(), log_action, log_info, pid);
+    sprintf(buffer,"%10.2Lf\t%15d\t%15s\t%s %d\n", elapsed_time(), getppid(), log_action, log_info, pid);
     if(write(file_log, buffer, strlen(buffer)) == -1) {
         return 1;
     }
