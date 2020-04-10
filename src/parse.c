@@ -90,25 +90,19 @@ int parse_cmd(int argc, char *argv[], parse_info_t *info) {
         return flags;
     }
 
-    // Obligatory flag -l
-    if (strcmp(argv[0], "-l") != 0 && strcmp(argv[0], "--count-links") != 0) {
-        write(STDERR_FILENO, "Missing obligatory flag: -l or --count-links\n", 45);
-        flags |= FLAG_ERR;
-        return flags;
-    }
-
-    flags |= FLAG_LINKS;
-
     info->paths_memsize = 1;
     info->paths = (char**)malloc(sizeof(char*) * info->paths_memsize);
 
-    for (int i = 1; i < argc; i++) {
+    for (int i = 0; i < argc; i++) {
         if (strcmp(argv[i], "--all") == 0) {
             flags |= FLAG_ALL; // update flag
         }
         else if (strcmp(argv[i], "--bytes") == 0) {
             flags &= ~FLAG_BSIZE; // remove flag
             flags |= FLAG_BYTES; // update flag
+        }
+        else if (strcmp(argv[0], "--count-links") == 0) {
+            flags |= FLAG_LINKS;
         }
         else if (strncmp(argv[i], "--block-size=", 13) == 0) {
             char *tmp = argv[i] + 13; // skip "--block-size="
@@ -218,6 +212,13 @@ int parse_cmd(int argc, char *argv[], parse_info_t *info) {
             }
             flags |= FLAG_PATH;
         }
+    }
+
+    // Obligatory flag -l
+    if ((flags & FLAG_LINKS) == 0) {
+        write(STDERR_FILENO, "Missing obligatory flag: -l or --count-links\n", 45);
+        flags |= FLAG_ERR;
+        return flags;
     }
 
     if (info->paths_size == 0) {

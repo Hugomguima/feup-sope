@@ -1,11 +1,52 @@
-# FEUP-SOPE : Tool to estimate file space usage
+# Simpledu
+- **Short Description**: Tool to estimate file space usage
+- **Environment**: Unix
+- **Tools used**: C
+- **Institution**: [FEUP](https://sigarra.up.pt/feup/en/web_page.Inicial)
+- **Course**: [MIEIC](https://sigarra.up.pt/feup/en/cur_geral.cur_view?pv_curso_id=742&pv_ano_lectivo=2019)
+- **Curricular Unit**: [SOPE](https://sigarra.up.pt/feup/en/ucurr_geral.ficha_uc_view?pv_ocorrencia_id=436440) (Operating Systems)
+
+## Group Members
+- Diogo Samuel (up201806250@fe.up.pt)
+- Hugo Guimarães (up201806490@fe.up.pt)
+- Telmo Baptista (up201806554@fe.up.pt)
 
 ## Program usage
-- `simpledu -l [path] [-a] [-b] [-B size] [-L] [-S] [--max-depth=N]`
 
+### Compile
+```sh
+make
+```
+
+### Cleanup
+```sh
+make clean
+```
+
+### Run
 The executable file is in `./bin/` directory after you run the command `make` in terminal.
+Note that the flag `-l` or `--count-links` must be present.
+```sh
+./bin/simpledu -l [path] [-a] [-b] [-B size] [-L] [-S] [--max-depth=N]
+```
+or can be run via the symbolic link created by `make`
+```sh
+./simpledu -l [path] [-a] [-b] [-B size] [-L] [-S] [--max-depth=N]
+```
 
-Also we have a symbolic link to executable file in the root folder after executing `make`
+## Description
+The aim of the project was to develop a tool to summarize the use of disk space in a file or directory, the information to be made available must include files and subdirectories that may be contained therein.
+
+This tool has as reference the command `du`, which presents information about the disk space used by files and directories.
+
+### Flag Description
+- `-a` or `--all` - the displayed information also concerns files
+-  `-b` or `--bytes` - displays the actual number of data bytes (files) or allocated (directories)
+- `-B`, `--block-size=SIZE` - defines the size (bytes) of the block for representation purposes
+- `-l`, `--count-links` - count the same file multiple times;
+- `-L`, `--dereference` - follow symbolic links;
+- `-S`, `--separate-dirs` - the displayed information does not include the size of the subdirectories;
+- `--max-depth=N` - limits the displayed information to N (0.1, ...) levels of directory depth
 
 ## Features
 Every functionality mentioned bellow is full working.
@@ -77,6 +118,32 @@ Every functionality mentioned bellow is full working.
 
 - The results of command simpledu when the flag -B / --block-size is set can have some imprecisions.
 
-# Extra Stuff
+# Extra Functionalities
 
-- Like du, our simpledu accepts more than 1 path. So commands like `./simpledu -l path1 path2` are valid!
+- Flags passed by the command line don't require to be in that order and can also be grouped, such as:
+```sh
+./simpledu -laLSB 2048 path/random
+```
+
+- Multiple paths can also be passed to the tool, resulting the tool to display the information for the paths in the order they are passed
+```sh
+./simpledu -la ./src ./include
+```
+results in
+```
+4       ./src/log.c
+20      ./src/main.c
+8       ./src/parse.c
+4       ./src/sig_handler.c
+8       ./src/utils.c
+44      ./src
+4       ./include/log.h
+4       ./include/parse.h
+4       ./include/sig_handler.h
+4       ./include/utils.h
+16      ./include/
+```
+Note that the position of the path doesn't matter, this is equivalent to the last example:
+```sh
+./simpledu ./src -la ./include
+```
