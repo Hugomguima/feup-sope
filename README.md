@@ -7,7 +7,7 @@
 - **Curricular Unit**: [SOPE](https://sigarra.up.pt/feup/en/ucurr_geral.ficha_uc_view?pv_ocorrencia_id=436440) (Operating Systems)
 
 ## Group Members
-- Diogo Samuel (up201806250@fe.up.pt)
+- Diogo Samuel Fernandes (up201806250@fe.up.pt)
 - Hugo Guimarães (up201806490@fe.up.pt)
 - Telmo Baptista (up201806554@fe.up.pt)
 
@@ -112,13 +112,13 @@ Every functionality mentioned bellow is full working.
   - Upon confirmation of continuation
     - [x] Resume operations immediately
 
-# Precision errors
+## Precision errors
 
 - We use `gettimeofday()` to get the clock time. On our system this clock have µs precision, but this is not guaranteed. We used this function instead of using `clock()` because in our system, the first one provided us more accuracy than the second one.
 
 - The results of command simpledu when the flag -B / --block-size is set can have some imprecisions.
 
-# Extra Functionalities
+## Extra Functionalities
 
 - Flags passed by the command line don't require to be in that order and can also be grouped, such as:
 ```sh
