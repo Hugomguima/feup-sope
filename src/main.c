@@ -35,7 +35,7 @@ int error_sys(char *error_msg) {
 }
 
 void write_log_exit_status(void) {
-    if (write_log_int("EXIT", exit_status)) {
+    if (write_log_long("EXIT", exit_status)) {
         write(STDOUT_FILENO, "error upon writing log\n", 23);
     }
 }
@@ -341,7 +341,7 @@ int main(int argc, char *argv[]/*, char * envp[]*/) {
                                             exit_status = error_sys("write error upon reading from child connection pipe");
                                             return exit_status;
                                         }
-                                        if(write_log_int("RECV_PIPE", subdir_size)) { // SAMU TROCA PARA DOUBLE
+                                        if(write_log_double("RECV_PIPE", subdir_size)) {
                                             write(STDOUT_FILENO, "error upon writing log\n", 23);
                                         }
 
@@ -393,7 +393,7 @@ int main(int argc, char *argv[]/*, char * envp[]*/) {
                     }
                 }
 
-                if (write_log_int("SEND_PIPE", fsize)) { // SAMU TROCA PRA DOUBLE
+                if (write_log_double("SEND_PIPE", fsize)) {
                     write(STDOUT_FILENO, "error upon writing log\n", 23);
                 }
 

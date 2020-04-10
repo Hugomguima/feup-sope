@@ -197,7 +197,7 @@ double fget_size(int bytes, struct stat *status, int block_size) {
         if (block_size > 512) {
             fsize = (status->st_blocks) / (block_size / 512.0);
         } else {
-            fsize = (status->st_blocks) / ((double) block_size);
+            fsize = (status->st_blocks) * (512.0 / (double) block_size);
         }
     }
     return fsize;

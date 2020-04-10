@@ -5,6 +5,8 @@
 
 The executable file is in `./bin/` directory after you run the command `make` in terminal.
 
+Also we have a symbolic link to executable file in the root folder after executing `make`
+
 ## Features
 Every functionality mentioned bellow is full working.
 

@@ -102,9 +102,19 @@ int write_log_array(char *log_action, int *info, int size) {
     return 0;
 }
 
-int write_log_int(char *log_action, long log_info) {
+int write_log_long(char *log_action, long log_info) {
     char buffer[256];
     sprintf(buffer,"%10.2Lf\t%15d\t%15s\t%ld\n", elapsed_time(), getppid(), log_action, log_info);
+    if(write(file_log, buffer, strlen(buffer)) == -1) {
+        return 1;
+    }
+
+    return 0;
+}
+
+int write_log_double(char *log_action, double log_info) {
+    char buffer[256];
+    sprintf(buffer,"%10.2Lf\t%15d\t%15s\t%f\n", elapsed_time(), getppid(), log_action, log_info);
     if(write(file_log, buffer, strlen(buffer)) == -1) {
         return 1;
     }

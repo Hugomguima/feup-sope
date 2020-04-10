@@ -60,7 +60,15 @@ int write_log_array(char *log_action, int *info, int size);
  * @param info          long int to write in log
  * @return              0 uppon sucess or 1 otherwhise
  */
-int write_log_int(char *log_action, long log_info);
+int write_log_long(char *log_action, long log_info);
+
+/**
+ * @brief               Write an action to log
+ * @param log_action    Description of type of event
+ * @param info          double to write in log
+ * @return              0 uppon sucess or 1 otherwhise
+ */
+int write_log_double(char *log_action, double log_info);
 
 /**
  * @brief               Write an action to log
