@@ -12,8 +12,8 @@
 #include <string.h>
 
 //temp
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 /*----------------------------------------------------------------------------*/
 /*                              STRING FUNCTIONS                              */
@@ -62,28 +62,28 @@ char** str_split(const char *str, const char *delim) {
     char *dup = strdup(str);
 
     while ((pos = str_find(dup, delim, pos)) != -1) { // while there's matches
-        count++;
+    count++;
+}
+
+count += 2; // add one for last group and one for NULL pointer
+
+result = (char**)malloc(sizeof(char*) * count);
+
+if (result != NULL) {
+    int index = 0;
+    char *token = strtok(dup, delim);
+
+    while (token) {
+        assert(index < count);
+        *(result + index++) = strdup(token);
+        token = strtok(NULL, delim);
     }
 
-    count += 2; // add one for last group and one for NULL pointer
+    assert(index == count - 1);
+    *(result + index) = NULL;
+}
 
-    result = (char**)malloc(sizeof(char*) * count);
-
-    if (result != NULL) {
-        int index = 0;
-        char *token = strtok(dup, delim);
-
-        while (token) {
-            assert(index < count);
-            *(result + index++) = strdup(token);
-            token = strtok(NULL, delim);
-        }
-
-        assert(index == count - 1);
-        *(result + index) = NULL;
-    }
-
-    return result;
+return result;
 }
 
 int str_isDigit(const char *str) {
@@ -92,7 +92,7 @@ int str_isDigit(const char *str) {
     int i = 0;
     char ch;
     while ((ch = str[i++]) != 0)
-        if (ch < '0' || ch > '9') return 0;
+    if (ch < '0' || ch > '9') return 0;
 
     return 1;
 }
@@ -103,7 +103,7 @@ int str_isAlpha(const char *str) {
     int i = 0;
     char ch;
     while ((ch = str[i++]) != 0)
-        if (!((ch >= 'A' && ch <= 'Z') || (ch >= 'a' && ch <= 'z'))) return 0;
+    if (!((ch >= 'A' && ch <= 'Z') || (ch >= 'a' && ch <= 'z'))) return 0;
 
     return 1;
 }
@@ -140,19 +140,19 @@ char* str_cat(char *s1, char *s2, int n) {
 int fget_status(const char *path, struct stat *pstat, int deref_sym) {
     if(deref_sym) { // If -L is set, then dereference the symbolic link
         if (stat(path, pstat) == -1) {
-              printf("here");
-              char *error = strerror(errno);
-              write(STDERR_FILENO, error, strlen(error));
-              write(STDERR_FILENO, "\n", 1);
-              return -1;
+            printf("here");
+            char *error = strerror(errno);
+            write(STDERR_FILENO, error, strlen(error));
+            write(STDERR_FILENO, "\n", 1);
+            return -1;
         }
     }
     else {
         if (lstat(path, pstat) == -1) {
-              char *error = strerror(errno);
-              write(STDERR_FILENO, error, strlen(error));
-              write(STDERR_FILENO, "\n", 1);
-              return -1;
+            char *error = strerror(errno);
+            write(STDERR_FILENO, error, strlen(error));
+            write(STDERR_FILENO, "\n", 1);
+            return -1;
         }
     }
     return 0;
@@ -171,21 +171,21 @@ file_type_t fget_type(const char *path, int deref_sym) {
 file_type_t sget_type(const struct stat *pstat) {
     switch (pstat->st_mode & S_IFMT) {
         case S_IFREG:
-            return FTYPE_REG;
+        return FTYPE_REG;
         case S_IFDIR:
-            return FTYPE_DIR;
+        return FTYPE_DIR;
         case S_IFCHR:
-            return FTYPE_CHR;
+        return FTYPE_CHR;
         case S_IFBLK:
-            return FTYPE_BLOCK;
+        return FTYPE_BLOCK;
         case S_IFLNK:
-            return FTYPE_LINK;
+        return FTYPE_LINK;
         case S_IFIFO:
-            return FTYPE_FIFO;
+        return FTYPE_FIFO;
         case S_IFSOCK:
-            return FTYPE_SOCKET;
+        return FTYPE_SOCKET;
         default:
-            return FTYPE_UNKNOWN;
+        return FTYPE_UNKNOWN;
     }
 }
 

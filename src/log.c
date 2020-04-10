@@ -54,14 +54,14 @@ void set_log_descriptor(int descriptor) {
 }
 
 void set_time(struct timeval *it) {
-  init_time = *it;
+    init_time = *it;
 }
 
 
 long double elapsed_time() {
-  struct timeval current_time;
-  gettimeofday(&current_time, 0);
-  return (current_time.tv_usec - init_time.tv_usec) / 1000.0 + (current_time.tv_sec - init_time.tv_sec) * 1000.0;
+    struct timeval current_time;
+    gettimeofday(&current_time, 0);
+    return (current_time.tv_usec - init_time.tv_usec) / 1000.0 + (current_time.tv_sec - init_time.tv_sec) * 1000.0;
 }
 
 int write_log(char *log_action, char *log_info) {
@@ -88,8 +88,8 @@ int write_log_array(char *log_action, int *info, int size) {
     char to_char[256];
     char *log_info = malloc(256);
     for(int i = 0; i < size; i++) {
-      sprintf(to_char, "%d", info[i]);
-      strncat(log_info, to_char, 256 - 1);
+        sprintf(to_char, "%d", info[i]);
+        strncat(log_info, to_char, 256 - 1);
     }
 
     char buffer[256];

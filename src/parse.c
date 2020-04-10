@@ -128,7 +128,7 @@ int parse_cmd(int argc, char *argv[], parse_info_t *info) {
             char *tmp = argv[i] + 12; // skip "--max-depth="
 
             if (strlen(tmp) == 0 || str_isDigit(tmp) < 1) {
-                write(STDERR_FILENO, "Flag --max-depth must have an integer\n", 46);
+                write(STDERR_FILENO, "Flag --max-depth must have an integer\n", 38);
                 flags |= FLAG_ERR;
                 return flags;
             }
@@ -142,61 +142,6 @@ int parse_cmd(int argc, char *argv[], parse_info_t *info) {
 
             if (strlen(tmp) == 0) { // verify if it's valid path
 
-                struct stat status;
-
-                if (fget_status(argv[i], &status, 0) == -1) {
-                    flags |= FLAG_ERR;
-                    return flags;
-                }
-
-                parse_info_addpath(info, argv[i]);
-                if (rtrim(info->paths[info->paths_size - 1], '/', MODE_RMDUP)) {
-                    write(STDERR_FILENO, "Error trimming path\n", 20);
-                    flags |= FLAG_ERR;
-                    return flags;
-                }
-                flags |= FLAG_PATH;
-
-            }
-
-            if (str_isAlpha(tmp) < 1) {
-                write(STDERR_FILENO, "Invalid flag or flags\n", 22);
-                flags |= FLAG_ERR;
-                return flags;
-            }
-
-            if (str_find(tmp, "l", 0) >= 0) {
-                flags |= FLAG_LINKS;
-            }
-            if (str_find(tmp, "a", 0) >= 0) {
-                flags |= FLAG_ALL; // update flag
-            }
-            if (str_find(tmp, "b", 0) >= 0) {
-                flags &= ~FLAG_BSIZE;
-                flags |= FLAG_BYTES; // update flag
-            }
-            if (str_find(tmp, "L", 0) >= 0) {
-                flags |= FLAG_DEREF; // update flag
-            }
-            if (str_find(tmp, "S", 0) >= 0) {
-                flags |= FLAG_SEPDIR; // update flag
-            }
-            if (str_find(tmp, "B", 0) >= 0) {
-
-                if (i + 1 >= argc || strlen(argv[i+1]) == 0 || str_isDigit(argv[i+1]) < 1) {
-                    write(STDERR_FILENO, "Flag -B or --block-size missing an integer\n", 43);
-                    flags |= FLAG_ERR;
-                    return flags;
-                }
-
-                sscanf(argv[i+1], "%d", &(info->block_size));
-
-                flags &= ~FLAG_BYTES;
-                flags |= FLAG_BSIZE; // update flag
-                i++;
-            }
-        }
-        else { // verify if it's valid path
             struct stat status;
 
             if (fget_status(argv[i], &status, 0) == -1) {
@@ -211,21 +156,76 @@ int parse_cmd(int argc, char *argv[], parse_info_t *info) {
                 return flags;
             }
             flags |= FLAG_PATH;
+
+        }
+
+        if (str_isAlpha(tmp) < 1) {
+            write(STDERR_FILENO, "Invalid flag or flags\n", 22);
+            flags |= FLAG_ERR;
+            return flags;
+        }
+
+        if (str_find(tmp, "l", 0) >= 0) {
+            flags |= FLAG_LINKS;
+        }
+        if (str_find(tmp, "a", 0) >= 0) {
+            flags |= FLAG_ALL; // update flag
+        }
+        if (str_find(tmp, "b", 0) >= 0) {
+            flags &= ~FLAG_BSIZE;
+            flags |= FLAG_BYTES; // update flag
+        }
+        if (str_find(tmp, "L", 0) >= 0) {
+            flags |= FLAG_DEREF; // update flag
+        }
+        if (str_find(tmp, "S", 0) >= 0) {
+            flags |= FLAG_SEPDIR; // update flag
+        }
+        if (str_find(tmp, "B", 0) >= 0) {
+
+            if (i + 1 >= argc || strlen(argv[i+1]) == 0 || str_isDigit(argv[i+1]) < 1) {
+                write(STDERR_FILENO, "Flag -B or --block-size missing an integer\n", 43);
+                flags |= FLAG_ERR;
+                return flags;
+            }
+
+            sscanf(argv[i+1], "%d", &(info->block_size));
+
+            flags &= ~FLAG_BYTES;
+            flags |= FLAG_BSIZE; // update flag
+            i++;
         }
     }
+    else { // verify if it's valid path
+    struct stat status;
 
-    // Obligatory flag -l
-    if ((flags & FLAG_LINKS) == 0) {
-        write(STDERR_FILENO, "Missing obligatory flag: -l or --count-links\n", 45);
+    if (fget_status(argv[i], &status, 0) == -1) {
         flags |= FLAG_ERR;
         return flags;
     }
 
-    if (info->paths_size == 0) {
-        parse_info_addpath(info, ".");
+    parse_info_addpath(info, argv[i]);
+    if (rtrim(info->paths[info->paths_size - 1], '/', MODE_RMDUP)) {
+        write(STDERR_FILENO, "Error trimming path\n", 20);
+        flags |= FLAG_ERR;
+        return flags;
     }
+    flags |= FLAG_PATH;
+}
+}
 
-
-
+// Obligatory flag -l
+if ((flags & FLAG_LINKS) == 0) {
+    write(STDERR_FILENO, "Missing obligatory flag: -l or --count-links\n", 45);
+    flags |= FLAG_ERR;
     return flags;
+}
+
+if (info->paths_size == 0) {
+    parse_info_addpath(info, ".");
+}
+
+
+
+return flags;
 }

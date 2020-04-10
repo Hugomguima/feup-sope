@@ -1,15 +1,15 @@
 /* MAIN HEADER */
 
 /* INCLUDE HEADERS */
-#include "parse.h"
-#include "utils.h"
 #include "log.h"
+#include "parse.h"
 #include "sig_handler.h"
+#include "utils.h"
 
 /* SYSTEM CALLS  HEADERS */
+#include <sys/stat.h>
 #include <sys/time.h>
 #include <sys/types.h>
-#include <sys/stat.h>
 #include <sys/wait.h>
 #include <unistd.h>
 
@@ -36,7 +36,7 @@ int error_sys(char *error_msg) {
 
 void write_log_exit_status(void) {
     if (write_log_long("EXIT", exit_status)) {
-        write(STDOUT_FILENO, "error upon writing log\n", 23);
+        write(STDERR_FILENO, "error upon writing log\n", 23);
     }
 }
 
@@ -91,7 +91,7 @@ int main(int argc, char *argv[]/*, char * envp[]*/) {
 
             // Write to log after restoring the file descriptor the information received
             if(write_log_array("RECV_PIPE", std, 3)  || write_log_timeval("RECV_PIPE", init_time)) {
-                write(STDOUT_FILENO, "error upon writing log\n", 23);
+                write(STDERR_FILENO, "error upon writing log\n", 23);
             }
 
 
@@ -109,7 +109,7 @@ int main(int argc, char *argv[]/*, char * envp[]*/) {
         }
         strncat(buffer, "\n", 1);
         if (write_log("CREATE", buffer)) {
-            write(STDOUT_FILENO, "error upon writing log\n", 23);
+            write(STDERR_FILENO, "error upon writing log\n", 23);
         }
     }
 
@@ -222,7 +222,7 @@ int main(int argc, char *argv[]/*, char * envp[]*/) {
                             char buffer[BUFFER_SIZE];
                             sprintf(buffer, "%ld""\x9""%s\n", dceill(new_fsize), new_path);
                             if (write_log("ENTRY", buffer)) {
-                                write(STDOUT_FILENO, "error upon writing log\n", 23);
+                                write(STDERR_FILENO, "error upon writing log\n", 23);
                             }
                             write(STDOUT_FILENO, buffer, strlen(buffer));
 
@@ -285,7 +285,7 @@ int main(int argc, char *argv[]/*, char * envp[]*/) {
                                     }
                                     // write log  of std
                                     if (write_log_array("SEND_PIPE", std, 3) || write_log_timeval("SEND_PIPE", init_time)) {
-                                        write(STDOUT_FILENO, "error upon writing log\n", 23);
+                                        write(STDERR_FILENO, "error upon writing log\n", 23);
                                     }
                                     if (close(pipe_ctop[READ_PIPE]) || close(pipe_ctosp[WRITE_PIPE])) {
                                         exit_status = error_sys("close error upon closing pipe");
@@ -342,7 +342,7 @@ int main(int argc, char *argv[]/*, char * envp[]*/) {
                                             return exit_status;
                                         }
                                         if(write_log_double("RECV_PIPE", subdir_size)) {
-                                            write(STDOUT_FILENO, "error upon writing log\n", 23);
+                                            write(STDERR_FILENO, "error upon writing log\n", 23);
                                         }
 
                                         fsize += (flags & FLAG_SEPDIR) ? 0 : subdir_size;
@@ -366,7 +366,7 @@ int main(int argc, char *argv[]/*, char * envp[]*/) {
                                 char buffer[BUFFER_SIZE];
                                 sprintf(buffer, "%ld""\x9""%s\n", dceill(new_fsize), new_path);
                                 if(write_log("ENTRY", buffer)) {
-                                    write(STDOUT_FILENO, "error upon writing log\n", 23);
+                                    write(STDERR_FILENO, "error upon writing log\n", 23);
                                 }
                                 write(STDOUT_FILENO, buffer, strlen(buffer));
                             }
@@ -381,7 +381,7 @@ int main(int argc, char *argv[]/*, char * envp[]*/) {
                     char buffer[BUFFER_SIZE];
                     sprintf(buffer, "%ld""\x9""%s\n", dceill(fsize), path);
                     if (write_log("ENTRY", buffer)) {
-                        write(STDOUT_FILENO, "error upon writing log\n", 23);
+                        write(STDERR_FILENO, "error upon writing log\n", 23);
                     }
                     write(STDOUT_FILENO, buffer, strlen(buffer));
                 }
@@ -394,7 +394,7 @@ int main(int argc, char *argv[]/*, char * envp[]*/) {
                 }
 
                 if (write_log_double("SEND_PIPE", fsize)) {
-                    write(STDOUT_FILENO, "error upon writing log\n", 23);
+                    write(STDERR_FILENO, "error upon writing log\n", 23);
                 }
 
                 if (closedir(dir)) {

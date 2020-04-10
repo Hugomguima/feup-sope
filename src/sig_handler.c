@@ -9,8 +9,8 @@
 #include <unistd.h>
 
 /* C LIBRARY HEADERS */
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 int globalProcess = 0;
 int check_process = 0;

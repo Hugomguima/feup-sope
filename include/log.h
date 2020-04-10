@@ -1,7 +1,12 @@
 #ifndef LOG_H_INCLUDED
 #define LOG_H_INCLUDED
 
+/* INCLUDE HEADERS */
+
+/* SYSTEM CALLS HEADERS */
 #include <sys/time.h>
+
+/* C LIBRARY HEADERS */
 
 #define DEFAULT_MODE 0644 /**< @brief Permissions associated with the file */
 
