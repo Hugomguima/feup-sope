@@ -54,25 +54,19 @@ void sigint_handler(int signo){
 }
 
 void siglog_handler(int signo){
-    struct sigaction newHandler,oldHandler;
+    struct sigaction newHandler;
 
     newHandler.sa_handler = SIG_DFL;
     sigemptyset(&newHandler.sa_mask);
     newHandler.sa_flags = 0;
 
     if(signo == SIGTERM){
-        sigaction(SIGTERM,&newHandler,&oldHandler);
-        raise(signo);
-        sigaction(SIGTERM,&oldHandler,NULL);
-        printf("SIGTERM recebido!\n");
-        //ESCREVER PARA O LOG
+        sigaction(SIGTERM,&newHandler,NULL);
+        raise(SIGTERM);
+        write_log_int("RECV_SIGNAL", signo);
     }
     else if(signo == SIGCONT){
-        sigaction(SIGCONT,&newHandler,&oldHandler);
-        raise(signo);
-        sigaction(SIGCONT,&oldHandler,NULL);
-        printf("SIGCONT recebido!\n");
-        //ESCREVER PARA O LOG
+        write_log_int("RECV_SIGNAL", signo);
     }
 
 }
