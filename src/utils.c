@@ -15,8 +15,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include <math.h>
-
 /*----------------------------------------------------------------------------*/
 /*                              STRING FUNCTIONS                              */
 /*----------------------------------------------------------------------------*/
@@ -191,17 +189,24 @@ file_type_t sget_type(const struct stat *pstat) {
     }
 }
 
-long fget_size(int bytes, struct stat *status, int block_size) {
-    long fsize;
+double fget_size(int bytes, struct stat *status, int block_size) {
+    double fsize;
     if (bytes) {
         fsize = status->st_size;
     } else {
-        // Ceil(a, b) = (a+b-1) / b
         if (block_size > 512) {
-            fsize = (status->st_blocks + (block_size / 512.0) - 1) / (block_size / 512.0);
+            fsize = (status->st_blocks) / (block_size / 512.0);
         } else {
-            fsize = (status->st_blocks * 512 + block_size - 1) / ((double) block_size);
+            fsize = (status->st_blocks) / ((double) block_size);
         }
     }
     return fsize;
+}
+
+/*----------------------------------------------------------------------------*/
+/*                              MATH FUNCTIONS                                */
+/*----------------------------------------------------------------------------*/
+
+long dceill(double x) {
+    return ((x - (long)x) > 0) ? (long)(x + 1) : (long)x;
 }
