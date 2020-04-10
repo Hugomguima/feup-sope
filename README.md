@@ -79,4 +79,4 @@ Every functionality mentioned bellow is full working.
 
 # Extra Stuff
 
-- Like du, our simpledu accept more than 1 path. So commands like `./simpledu -l path1 path2` are valid!
+- Like du, our simpledu accepts more than 1 path. So commands like `./simpledu -l path1 path2` are valid!
