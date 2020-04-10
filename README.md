@@ -10,7 +10,7 @@ Every functionality mentioned bellow is full working.
 
 #### Plan
 - [x] Receive, process and save command line arguments and environment variables
-- [ ] Add registration messages as new features are implemented and validate the correction of both
+- [X] Add registration messages as new features are implemented and validate the correction of both
 - [x] Start by choosing only files and presenting the desired information (bytes and blocks)
   - [x] Consider that the `-L` (or `--dereference`) option is active so that it is not necessary to distinguish symbolic links from regular files
 - [x] Distinguish between files and symbolic links and present different results depending on the `-L` option
@@ -73,6 +73,5 @@ Every functionality mentioned bellow is full working.
 
 - We use `gettimeofday()` to get the clock time. On our system this clock have µs precision, but this is not guaranteed. We used this function instead of using `clock()` because in our system, the first one provided us more accuracy than the second one. 
 
-- The results of command simpledu when the flag -B or --block-size is set can have some imprecisions.
+- The results of command simpledu when the flag -B / --block-size is set can have some imprecisions.
 
-# Other remarks
