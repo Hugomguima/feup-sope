@@ -96,6 +96,12 @@ file_type_t fget_type(const char *path, int deref_sym);
 
 file_type_t sget_type(const struct stat *pstat);
 
-long fget_size(int bytes, struct stat *status, int block_size);
+double fget_size(int bytes, struct stat *status, int block_size);
+
+/*----------------------------------------------------------------------------*/
+/*                              MATH FUNCTIONS                                */
+/*----------------------------------------------------------------------------*/
+
+long dceill(double x);
 
 #endif // UTILS_H_INCLUDED

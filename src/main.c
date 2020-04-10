@@ -113,7 +113,7 @@ int main(int argc, char *argv[]/*, char * envp[]*/) {
             write(STDOUT_FILENO, "error upon writing log\n", 23);
         }
     }
-    
+
     //Structs para dar handle aos sinais
     struct sigaction action,actionLog;
 
@@ -172,13 +172,13 @@ int main(int argc, char *argv[]/*, char * envp[]*/) {
     }
 
     file_type_t ftype = sget_type(&status);
-    long fsize = fget_size(flags & FLAG_BYTES, &status, block_size);
+    double fsize = fget_size(flags & FLAG_BYTES, &status, block_size);
 
     switch (ftype) {
         case FTYPE_REG:
             {
                 char buffer[BUFFER_SIZE];
-                sprintf(buffer, "%ld""\x9""%s\n", fsize, path);
+                sprintf(buffer, "%ld""\x9""%s\n", dceill(fsize), path);
                 write_log("ENTRY", buffer);
                 write(STDOUT_FILENO, buffer, strlen(buffer));
             }
@@ -211,14 +211,14 @@ int main(int argc, char *argv[]/*, char * envp[]*/) {
                     }
 
                     file_type_t new_type = sget_type(&new_status);
-                    long new_fsize;
+                    double new_fsize;
                     switch (new_type) {
                         case FTYPE_REG:
                             new_fsize = fget_size(flags & FLAG_BYTES, &new_status, block_size);
                             fsize += new_fsize;
                             if ((flags & FLAG_ALL) && ((flags & FLAG_MAXDEPTH) == 0 || max_depth > 0)) {
                                 char buffer[BUFFER_SIZE];
-                                sprintf(buffer, "%ld""\x9""%s\n", new_fsize, new_path);
+                                sprintf(buffer, "%ld""\x9""%s\n", dceill(new_fsize), new_path);
                                 if (write_log("ENTRY", buffer)) {
                                     write(STDOUT_FILENO, "error upon writing log\n", 23);
                                 }
@@ -331,12 +331,12 @@ int main(int argc, char *argv[]/*, char * envp[]*/) {
                                             free(new_argv);
 
                                             if (WIFEXITED(return_status) && WEXITSTATUS(return_status) == 0) {
-                                                int subdir_size = 0;
-                                                if (read(pipe_ctop[READ_PIPE], &subdir_size, sizeof(int)) == -1) {
+                                                double subdir_size = 0;
+                                                if (read(pipe_ctop[READ_PIPE], &subdir_size, sizeof(double)) == -1) {
                                                     exit_status = error_sys("write error upon reading from child connection pipe");
                                                     return exit_status;
                                                 }
-                                                if(write_log_int("RECV_PIPE", subdir_size)) {
+                                                if(write_log_int("RECV_PIPE", subdir_size)) { // SAMU TROCA PARA DOUBLE
                                                     write(STDOUT_FILENO, "error upon writing log\n", 23);
                                                 }
 
@@ -359,7 +359,7 @@ int main(int argc, char *argv[]/*, char * envp[]*/) {
                                 fsize += new_fsize;
                                 if ((flags & FLAG_ALL) && ((flags & FLAG_MAXDEPTH) == 0 || max_depth > 0)) {
                                     char buffer[BUFFER_SIZE];
-                                    sprintf(buffer, "%ld""\x9""%s\n", new_fsize, new_path);
+                                    sprintf(buffer, "%ld""\x9""%s\n", dceill(new_fsize), new_path);
                                     if(write_log("ENTRY", buffer)) {
                                         write(STDOUT_FILENO, "error upon writing log\n", 23);
                                     }
@@ -374,7 +374,7 @@ int main(int argc, char *argv[]/*, char * envp[]*/) {
                 }
                 if (!subprocess || (flags & FLAG_MAXDEPTH) == 0 || max_depth >= 0) {
                     char buffer[BUFFER_SIZE];
-                    sprintf(buffer, "%ld""\x9""%s\n", fsize, path);
+                    sprintf(buffer, "%ld""\x9""%s\n", dceill(fsize), path);
                     if (write_log("ENTRY", buffer)) {
                         write(STDOUT_FILENO, "error upon writing log\n", 23);
                     }
@@ -382,13 +382,13 @@ int main(int argc, char *argv[]/*, char * envp[]*/) {
                 }
 
                 if (subprocess) {
-                    if (write(ppipe_write, &fsize, sizeof(int)) == -1) {
+                    if (write(ppipe_write, &fsize, sizeof(double)) == -1) {
                         exit_status = error_sys("write error upong writing to parent connection pipe and/or write information received by pipe to log");
                         return exit_status;
                     }
                 }
 
-                if (write_log_int("SEND_PIPE", fsize)) {
+                if (write_log_int("SEND_PIPE", fsize)) { // SAMU TROCA PRA DOUBLE
                     write(STDOUT_FILENO, "error upon writing log\n", 23);
                 }
 
@@ -402,7 +402,7 @@ int main(int argc, char *argv[]/*, char * envp[]*/) {
             {
                 // Dereference symbolic link if flag is set
                 char buffer[BUFFER_SIZE];
-                sprintf(buffer, "%ld""\x9""%s\n", fsize, path);
+                sprintf(buffer, "%ld""\x9""%s\n", dceill(fsize), path);
                 if (write_log("ENTRY", buffer)) {
                     write(STDOUT_FILENO, "error upon writing log", 22);
                 }

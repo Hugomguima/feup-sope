@@ -28,7 +28,7 @@ void resetGlobalProcess(void){
 // Handler for SIGINT
 void sigint_handler(int signo){
     (void)signo;
-    
+
     write_log("RECV_SIGNAL", "SIGINT\n");
 
     char ch[256];
@@ -61,19 +61,19 @@ void sigint_handler(int signo){
 }
 
 void siglog_handler(int signo){
-    struct sigaction newHandler;
-
-    newHandler.sa_handler = SIG_DFL;
-    sigemptyset(&newHandler.sa_mask);
-    newHandler.sa_flags = 0;
-
     if(signo == SIGTERM){
-        sigaction(SIGTERM, &newHandler, NULL);
+        write_log_int("RECV_SIGNAL", "SIGTERM\n");
+
+        struct sigaction newHandler;
+
+        newHandler.sa_handler = SIG_DFL;
+        sigemptyset(&newHandler.sa_mask);
+        newHandler.sa_flags = 0;
+        sigaction(SIGTERM,&newHandler,NULL);
         raise(SIGTERM);
-        write_log("RECV_SIGNAL", "SIGTERM\n");
     }
     else if(signo == SIGCONT){
-        write_log("RECV_SIGNAL", "SIGCONT\n");
+        write_log_int("RECV_SIGNAL", "SIGCONT\n");
     }
 
 }
