@@ -1,0 +1,4 @@
+# ---- Ignore objects, binaries and libraries
+lib/
+obj/
+bin/
