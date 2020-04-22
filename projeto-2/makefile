@@ -25,7 +25,7 @@ QODIR = ./server/obj
 BDIR = ./bin
 
 # ---- Flags
-CFLAGS = -Wall
+CFLAGS = -Wall -pthread
 IFLAGS = -I$(UIDIR)
 LFLAGS = -L$(ULDIR)
 
@@ -51,7 +51,7 @@ $(UODIR)/%.o: $(USDIR)/%.c
 
 # --- Server
 $(QODIR)/%.o: $(QSDIR)/%.c
-	$(CC) $(CFLAGS) -c $(IFLAGS) $< -o $@
+	$(CC) $(CFLAGS) -c $(IFLAGS) $< -o $@ 
 
 # Create library
 makelib: makefolders $(ULDIR)/lib.a $(QLDIR)/lib.a
