@@ -22,7 +22,7 @@
 #define BUFFER_SIZE 256
 
 typedef struct {
-    double id;
+    int id;
     pid_t pid;
     pthread_t tid;
     int dur;
@@ -32,13 +32,15 @@ typedef struct {
 pthread_mutex_t mut = PTHREAD_MUTEX_INITIALIZER; // mutex
 
 void *th_operation(void *arg){
+    pthread_mutex_lock(&mut);
     request_t *req = arg;
-    printf("%lf\n", req->id);
+    printf("%d\n", req->id);
 
     char buf[1024];
     sprintf(buf, "/tmp/%d.%ld", req->pid, req->tid);
     int ans_fifo = open(buf, O_WRONLY);
-    write(ans_fifo, &req, sizeof(request_t));
+    write(ans_fifo, req, sizeof(request_t));
+    pthread_mutex_unlock(&mut);
     return NULL;
 }
 
