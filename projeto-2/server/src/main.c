@@ -14,14 +14,15 @@
 typedef struct {
     double id;
     pid_t pid;
-    /*
     pthread_t tid;
     int dur;
     int pl;
-    */
 } request_t;
 
+pthread_mutex_t mut = PTHREAD_MUTEX_INITIALIZER; // mutex
+
 void *th_operation(void *arg){
+    pthread_mutex_lock(&mut);
     request_t *req = arg;
     printf("%lf\n", req->id);
 
@@ -29,6 +30,7 @@ void *th_operation(void *arg){
     sprintf(buf, "/tmp/%d.tid", req->pid);
     int ans_fifo = open(buf, O_WRONLY);
     write(ans_fifo, &req->id, sizeof(double));
+    pthread_mutex_unlock(&mut);
     return NULL;
 }
 
