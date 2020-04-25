@@ -40,7 +40,7 @@ BDIR = ./bin
 # --- Shared
 SIFLAGS = -I$(SIDIR)
 SLFLAGS = -L$(SLDIR)
-SCFLAGS = -Wall
+SCFLAGS = -Wall -pthread
 # --- Client
 UIFLAGS = -I$(UIDIR) $(SIFLAGS)
 ULFLAGS = -L$(ULDIR) $(SLFLAGS)
@@ -53,7 +53,7 @@ QCFLAGS = -Wall -pthread
 
 # Dependencies
 # --- Shared Dependencies
-SDEPS = $(SODIR)/utils.o
+SDEPS = $(SODIR)/utils.o $(SODIR)/protocol.o
 # --- Client Dependencies
 UDEPS = $(SDEPS) $(UODIR)/parse.o
 UMAIN = main.o
