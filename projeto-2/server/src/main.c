@@ -32,15 +32,13 @@ typedef struct {
 pthread_mutex_t mut = PTHREAD_MUTEX_INITIALIZER; // mutex
 
 void *th_operation(void *arg){
-    pthread_mutex_lock(&mut);
     request_t *req = arg;
     printf("%lf\n", req->id);
 
     char buf[1024];
     sprintf(buf, "/tmp/%d.%ld", req->pid, req->tid);
     int ans_fifo = open(buf, O_WRONLY);
-    write(ans_fifo, &req->id, sizeof(double));
-    pthread_mutex_unlock(&mut);
+    write(ans_fifo, &req, sizeof(request_t));
     return NULL;
 }
 

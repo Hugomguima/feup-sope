@@ -19,7 +19,8 @@
 /* Miscellaneous */
 #include <pthread.h>
 
-double ID_ORDER = 0;
+int ID_ORDER = 0;
+int MAX_THREADS = 100;
 
 typedef struct {
     double id;
@@ -34,7 +35,11 @@ typedef struct {
 char req_fifo_path[256];
 
 void *th_request(void *arg){
-    request_t *req = arg;
+
+    // É necessário fazer um while loop que seja capaz de verificar se há informação a ser passada (Busy waiting)
+
+    request_t *req = malloc(sizeof(request_t));
+
     req->id = ID_ORDER;
     req->pid = getpid();
     req->tid = pthread_self();
@@ -51,12 +56,11 @@ void *th_request(void *arg){
     mkfifo(ans_fifo_path, 0660);
     int ans_fifo = open(ans_fifo_path, O_RDONLY);
 
-    double ans;
-    read(ans_fifo, &ans, sizeof(double));
+    request_t ans;
+    read(ans_fifo, &ans, sizeof(request_t));
+    printf("%lf\n", ans.id);
     close(ans_fifo);
-    unlink(ans_fifo_path);
-    printf("%lf\n", ans);
-    //pthread_mutex_unlock(&mut);
+    free(req);
     return NULL;
 }
 
@@ -70,6 +74,8 @@ int main(int argc, char *argv[]) {
         write(STDERR_FILENO, error, strlen(error));
         return EINVAL;
     }
+
+    pthread_t threads[MAX_THREADS];
 
     // error | | fifoname | secs
     int flags;
@@ -86,15 +92,21 @@ int main(int argc, char *argv[]) {
     sprintf(req_fifo_path, "/tmp/%s", info.path);
 
     while(time(NULL) < finish_time) {
-        request_t *req = malloc(sizeof(request_t));
+        printf("%d %d\n",ID_ORDER, MAX_THREADS);
+        if(ID_ORDER >= MAX_THREADS){
+            printf("Reached %d threads (Max Ammount)\n",ID_ORDER);
+            return 1;
+        }
+        else {
+            pthread_create(&threads[ID_ORDER], NULL, th_request, NULL);
+            ID_ORDER++;
+        }
 
-        pthread_t tid;
-
-        pthread_create(&tid, NULL, th_request, req);
-        free(req);
-
-        ID_ORDER++;
     }
-
+/*
+    for(int i = 0; i < MAX_THREADS; i++){
+        pthread_join(&threads[i], NULL);
+    }
+*/
     return 0;
 }
