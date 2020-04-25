@@ -38,7 +38,7 @@ void *th_operation(void *arg){
 
     char buf[1024];
     sprintf(buf, "/tmp/%d.%ld", req->pid, req->tid);
-    int ans_fifo = open(buf, O_WRONLY);
+    int ans_fifo = open(buf, O_WRONLY | O_NONBLOCK);
     write(ans_fifo, req, sizeof(request_t));
     pthread_mutex_unlock(&mut);
     return NULL;

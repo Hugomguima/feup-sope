@@ -100,10 +100,10 @@ int main(int argc, char *argv[]) {
             ID_ORDER++;
         }
     }
-/*
+
     for(int i = 0; i < MAX_THREADS; i++){
-        pthread_join(&threads[i], NULL);
+        pthread_detach(&threads[i]);
     }
-*/
+
     return 0;
 }
