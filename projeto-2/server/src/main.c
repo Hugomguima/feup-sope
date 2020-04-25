@@ -1,16 +1,23 @@
-#include <errno.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <stdlib.h>
-#include <fcntl.h>
-#include <stdio.h>
-#include <sys/unistd.h>
-#include <string.h>
-#include <pthread.h>
-#include <string.h>
-#include "parse.h"
+/* MAIN HEADER */
 
+/* INCLUDE HEADERS */
+#include "parse.h"
 #include "utils.h"
+
+/* SYSTEM CALLS HEADERS */
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
+
+/* C LIBRARY HEADERS */
+#include <errno.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+/* Miscellaneous */
+#include <pthread.h>
 
 #define BUFFER_SIZE 256
 
