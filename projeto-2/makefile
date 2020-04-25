@@ -2,6 +2,16 @@
 CC = gcc
 
 # ---- Directories
+# --- Shared
+# Source files
+SSDIR = ./shared/src
+# Header files
+SIDIR = ./shared/include
+# Library files
+SLDIR = ./shared/lib
+# Object files
+SODIR = ./shared/obj
+
 # --- Client
 # Source files
 USDIR = ./client/src
@@ -22,44 +32,53 @@ QLDIR = ./server/lib
 # Object files
 QODIR = ./server/obj
 
-# --- Shared Files
-SIDIR = ./shared/include
-SSDIR = ./shared/src
 
 # Executable files
 BDIR = ./bin
 
 # ---- Flags
-CFLAGS = -Wall -pthread
+# --- Shared
+SIFLAGS = -I$(SIDIR)
+SLFLAGS = -L$(SLDIR)
+SCFLAGS = -Wall
 # --- Client
-UIFLAGS = -I$(UIDIR)
-ULFLAGS = -L$(ULDIR)
+UIFLAGS = -I$(UIDIR) $(SIFLAGS)
+ULFLAGS = -L$(ULDIR) $(SLFLAGS)
+UCFLAGS = -Wall -pthread
 # --- Server
-QIFLAGS = -I$(QIDIR)
-QLFLAGS = -L$(QLDIR)
+QIFLAGS = -I$(QIDIR) $(SIFLAGS)
+QLFLAGS = -L$(QLDIR) $(SLFLAGS)
+QCFLAGS = -Wall -pthread
 
 
 # Dependencies
+# --- Shared Dependencies
+SDEPS = $(SODIR)/utils.o
 # --- Client Dependencies
-UDEPS = $(UODIR)/utils.o $(UODIR)/parse.o
+UDEPS = $(SDEPS) $(UODIR)/parse.o
+UMAIN = main.o
 # --- Server Dependencies
-QDEPS = $(QODIR)/utils.o $(QODIR)/parse.o
-MAIN = main.o
+QDEPS = $(SDEPS) $(QODIR)/parse.o
+QMAIN = main.o
 
 # Executable
 UTARGET = Un
 QTARGET = Qn
 
-.PHONY: all clean
+.PHONY: all clean client server shared
 
-all: $(BDIR)/$(UTARGET) $(BDIR)/$(QTARGET)
+all: client server
+
+client: shared $(BDIR)/$(UTARGET)
+
+server: shared $(BDIR)/$(QTARGET)
+
+shared: makesharedlib
 
 # Create object files
 # --- Shared
-$(UODIR)/%.o: $(SSDIR)/%.c
-	$(CC) $(CFLAGS) -c $(SIFLAGS) $< -o $@
-$(QODIR)/%.o: $(SSDIR)/%.c
-	$(CC) $(CFLAGS) -c $(SIFLAGS) $< -o $@
+$(SODIR)/%.o: $(SSDIR)/%.c
+	$(CC) $(SCFLAGS) -c $(SIFLAGS) $< -o $@
 
 # --- Client
 $(UODIR)/%.o: $(USDIR)/%.c
@@ -70,33 +89,62 @@ $(QODIR)/%.o: $(QSDIR)/%.c
 	$(CC) $(CFLAGS) -c $(QIFLAGS) $< -o $@
 
 # Create library
-makelib: makefolders $(ULDIR)/lib.a $(QLDIR)/lib.a
+makelib: makefolders makesharedlib makeclientlib makeserverlib
+
+makesharedlib: makesharedfolders $(SLDIR)/lib.a
+
+makeclientlib: makesharedlib makeclientfolders $(ULDIR)/lib.a
+
+makeserverlib: makesharedlib makeserverfolders $(QLDIR)/lib.a
+
+$(SLDIR)/lib.a: $(SDEPS)
+	rm -rf $@
+	ar rvs $@ $<
 
 $(ULDIR)/lib.a: $(UDEPS)
 	rm -f $@
-	ar rvs $@ $(UDEPS)
+	ar rvs $@ $<
 
 $(QLDIR)/lib.a: $(QDEPS)
 	rm -f $@
-	ar rvs $@ $(QDEPS)
+	ar rvs $@ $<
 
 
-$(BDIR)/$(UTARGET): makelib $(UODIR)/$(MAIN)
-	$(CC) $(CFLAGS) -o $@ $(word 2, $^) $(UDEPS)
+$(BDIR)/$(UTARGET): makeclientlib $(UODIR)/$(UMAIN)
+	$(CC) $(UCFLAGS) -o $@ $(word 2, $^) $(UDEPS)
+	ln -sf $@ $(UTARGET)
 
-$(BDIR)/$(QTARGET): makelib $(QODIR)/$(MAIN)
-	$(CC) $(CFLAGS) -o $@ $(word 2, $^) $(QDEPS)
+$(BDIR)/$(QTARGET): makeserverlib $(QODIR)/$(QMAIN)
+	$(CC) $(QCFLAGS) -o $@ $(word 2, $^) $(QDEPS)
+	ln -sf $@ $(QTARGET)
 
-makefolders:
+makefolders: makesharedfolders makeclientfolders makeserverfolders
+
+makesharedfolders:
+	mkdir -p $(SLDIR)
+	mkdir -p $(SODIR)
+
+makeclientfolders:
 	mkdir -p $(ULDIR)
 	mkdir -p $(UODIR)
+	mkdir -p $(BDIR)
+
+makeserverfolders:
 	mkdir -p $(QLDIR)
 	mkdir -p $(QODIR)
 	mkdir -p $(BDIR)
 
-clean:
+clean: cleanshared
+	rm -rf $(BDIR)
+
+cleanshared: cleanclient cleanserver
+	rm -rf $(SLDIR)
+	rm -rf $(SODIR)
+cleanclient:
+	rm -f  $(UTARGET)
 	rm -rf $(ULDIR)
 	rm -rf $(UODIR)
+cleanserver:
+	rm -f  $(QTARGET)
 	rm -rf $(QLDIR)
 	rm -rf $(QODIR)
-	rm -rf $(BDIR)

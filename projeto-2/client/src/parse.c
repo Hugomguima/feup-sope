@@ -43,12 +43,13 @@ int parse_cmd(int argc, char *argv[], parse_info_t *info) {
             flags |= FLAG_SECS;  // execution duration flag
             i++;
         } else {
+            if (info->path != NULL) free(info->path);
             info->path = strdup(argv[i]);
             flags |= FLAG_FIFO;
         }
     }
 
-    if ((flags & (FLAG_SECS | FLAG_FIFO)) == 0) {
+    if ((flags & FLAG_SECS) == 0 || (flags & FLAG_FIFO) == 0) {
         write(STDERR_FILENO, "Missing obligatory flag -t or FIFO name\n", 40);
         flags |= FLAG_ERR;
         return flags;
