@@ -31,7 +31,9 @@ BDIR = ./bin
 
 # ---- Flags
 CFLAGS = -Wall -pthread
-IFLAGS = -I$(UIDIR)
+SIFLAGS = -I$(SIDIR)
+UIFLAGS = -I$(UIDIR) 
+QIFLAGS = -I$(QIDIR) 
 LFLAGS = -L$(ULDIR)
 
 # Dependencies
@@ -51,12 +53,12 @@ all: $(BDIR)/$(UTARGET) $(BDIR)/$(QTARGET)
 
 # Create object files
 # --- Client
-$(UODIR)/%.o: $(USDIR)/%.c $(SSDIR)/%.c
-	$(CC) $(CFLAGS) -c $(IFLAGS) $< -o $@
+$(UODIR)/%.o: $(USDIR)/%.c $(SSDIR)/%.c 
+	$(CC) $(CFLAGS) -c $(UIFLAGS) $(SIFLAGS) $< -o $@
 
 # --- Server
-$(QODIR)/%.o: $(QSDIR)/%.c $(SSDIR)/%.c
-	$(CC) $(CFLAGS) -c $(IFLAGS) $< -o $@ 
+$(QODIR)/%.o: $(QSDIR)/%.c $(SSDIR)/%.c 
+	$(CC) $(CFLAGS) -c $(QIFLAGS) $(SIFLAGS) $< -o $@ 
 
 # Create library
 makelib: makefolders $(ULDIR)/lib.a $(QLDIR)/lib.a
