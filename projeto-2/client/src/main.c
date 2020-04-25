@@ -31,14 +31,15 @@ typedef struct {
 
 #define BUFFER_SIZE 256
 
-char *req_fifo_path;
-
-//pthread_mutex_t mut = PTHREAD_MUTEX_INITIALIZER; // mutex
-
-
+char req_fifo_path[256];
 
 void *th_request(void *arg){
     request_t *req = arg;
+    req->id = ID_ORDER;
+    req->pid = getpid();
+    req->tid = pthread_self();
+    req->dur = 10;
+    req->pl = -1;
 
     //pthread_mutex_lock(&mut);
     int req_fifo = open(req_fifo_path, O_WRONLY);
@@ -46,7 +47,7 @@ void *th_request(void *arg){
     close(req_fifo);
 
     char ans_fifo_path[1024];
-    sprintf(ans_fifo_path, "/tmp/%d.tid", req->pid);
+    sprintf(ans_fifo_path, "/tmp/%d.%ld", req->pid, req->tid);
     mkfifo(ans_fifo_path, 0660);
     int ans_fifo = open(ans_fifo_path, O_RDONLY);
 
@@ -82,19 +83,12 @@ int main(int argc, char *argv[]) {
     }
 
     long int finish_time = time(NULL) + info.exec_secs;
-    req_fifo_path = info.path;
+    sprintf(req_fifo_path, "/tmp/%s", info.path);
 
     while(time(NULL) < finish_time) {
         request_t *req = malloc(sizeof(request_t));
 
         pthread_t tid;
-
-        req->id = ID_ORDER;
-        req->pid = getpid();
-        req->tid = 0;
-        req->dur = 10;
-        req->pl = -1;
-
 
         pthread_create(&tid, NULL, th_request, req);
         free(req);
