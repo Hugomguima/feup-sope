@@ -26,18 +26,6 @@ typedef struct request {
 };
 
 /**
- * @brief Fills the request with the arguments given
- *
- * @param request   Pointer to request to be filled
- * @param id        Request ID
- * @param pid       Process ID that made the request
- * @param tid       Thread ID that made the request
- * @param dur       Request duration
- * @return 0 if operation was sucessful, otherwise -1
- */
-int fill_request(request_t *request, int id, pid_t pid, pthread_t tid, int dur);
-
-/**
  * @brief Write request to the file
  *
  * @param fd        File descriptor of file
@@ -54,6 +42,18 @@ int write_request(int fd, const request_t *request);
  * @return  0 if operation was successful, otherwise an error code
  */
 int read_request(int fd, const request_t *request);
+
+/**
+ * @brief Fills the request with the arguments given
+ *
+ * @param request   Pointer to request to be filled
+ * @param id        Request ID
+ * @param pid       Process ID that made the request
+ * @param tid       Thread ID that made the request
+ * @param dur       Request duration
+ * @return 0 if operation was sucessful, otherwise -1
+ */
+int fill_request(request_t *request, int id, pid_t pid, pthread_t tid, int dur);
 
 /**
  * @brief Write reply to the file
