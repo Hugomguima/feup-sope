@@ -30,7 +30,7 @@ void *th_operation(void *arg){
     printf("%lf\n", req->id);
 
     char buf[1024];
-    sprintf(buf, "/tmp/%d.tid", req->pid);
+    sprintf(buf, "/tmp/%d.%ld", req->pid, req->tid);
     int ans_fifo = open(buf, O_WRONLY);
     write(ans_fifo, &req->id, sizeof(double));
     pthread_mutex_unlock(&mut);
@@ -59,7 +59,8 @@ int main(int argc, char *argv[]) {
         return -1;
     }
 
-    char *req_fifo_path = info.path;
+    char req_fifo_path[256];
+    sprintf(req_fifo_path, "/tmp/%s", info.path);
 
     mkfifo(req_fifo_path, 0660);
     int req_fifo = open(req_fifo_path, O_RDONLY);
