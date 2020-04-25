@@ -52,12 +52,18 @@ QTARGET = Qn
 all: $(BDIR)/$(UTARGET) $(BDIR)/$(QTARGET)
 
 # Create object files
+# --- Shared
+$(UODIR)/%.o: $(SSDIR)/%.c 
+	$(CC) $(CFLAGS) -c $(SIFLAGS) $< -o $@
+$(QODIR)/%.o: $(SSDIR)/%.c 
+	$(CC) $(CFLAGS) -c $(SIFLAGS) $< -o $@
+
 # --- Client
-$(UODIR)/%.o: $(USDIR)/%.c $(SSDIR)/%.c 
+$(UODIR)/%.o: $(USDIR)/%.c  
 	$(CC) $(CFLAGS) -c $(UIFLAGS) $(SIFLAGS) $< -o $@
 
 # --- Server
-$(QODIR)/%.o: $(QSDIR)/%.c $(SSDIR)/%.c 
+$(QODIR)/%.o: $(QSDIR)/%.c
 	$(CC) $(CFLAGS) -c $(QIFLAGS) $(SIFLAGS) $< -o $@ 
 
 # Create library
