@@ -9,6 +9,8 @@
 #include <pthread.h>
 #include <string.h>
 
+#include "utils.h"
+
 #define BUFFER_SIZE 256
 
 typedef struct {

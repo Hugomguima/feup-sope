@@ -9,6 +9,8 @@
 #include <pthread.h>
 #include <string.h>
 
+#include "utils.h"
+
 double ID_ORDER = 0;
 
 typedef struct {
@@ -24,6 +26,8 @@ typedef struct {
 char *req_fifo_path;
 
 //pthread_mutex_t mut = PTHREAD_MUTEX_INITIALIZER; // mutex
+
+
 
 void *th_request(void *arg){
     request_t *req = arg;
@@ -58,7 +62,7 @@ int main(int argc, char *argv[]) {
         write(STDERR_FILENO, error, strlen(error));
         return EINVAL;
     }
-   
+    //str_isDigit("4");
     long int finish_time = time(NULL) + atoi(argv[1]);
     req_fifo_path = argv[2];
 

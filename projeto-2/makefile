@@ -11,6 +11,7 @@ UIDIR = ./client/include
 ULDIR = ./client/lib
 # Object files
 UODIR = ./client/obj
+
 # --- Server
 # Source files
 QSDIR = ./server/src
@@ -20,6 +21,10 @@ QIDIR = ./server/include
 QLDIR = ./server/lib
 # Object files
 QODIR = ./server/obj
+
+# --- Shared Files
+SIDIR = ./shared/include
+SSDIR = ./shared/src
 
 # Executable files
 BDIR = ./bin
@@ -46,11 +51,11 @@ all: $(BDIR)/$(UTARGET) $(BDIR)/$(QTARGET)
 
 # Create object files
 # --- Client
-$(UODIR)/%.o: $(USDIR)/%.c
+$(UODIR)/%.o: $(USDIR)/%.c $(SSDIR)/%.c
 	$(CC) $(CFLAGS) -c $(IFLAGS) $< -o $@
 
 # --- Server
-$(QODIR)/%.o: $(QSDIR)/%.c
+$(QODIR)/%.o: $(QSDIR)/%.c $(SSDIR)/%.c
 	$(CC) $(CFLAGS) -c $(IFLAGS) $< -o $@ 
 
 # Create library
