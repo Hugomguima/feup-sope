@@ -10,6 +10,8 @@
 #include <string.h>
 #include "parse.h"
 
+#include "utils.h"
+
 #define BUFFER_SIZE 256
 
 typedef struct {

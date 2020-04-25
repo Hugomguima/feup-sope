@@ -10,6 +10,8 @@
 #include <string.h>
 #include "parse.h"
 
+#include "utils.h"
+
 double ID_ORDER = 0;
 
 typedef struct {
@@ -25,6 +27,8 @@ typedef struct {
 char *req_fifo_path;
 
 //pthread_mutex_t mut = PTHREAD_MUTEX_INITIALIZER; // mutex
+
+
 
 void *th_request(void *arg){
     request_t *req = arg;
