@@ -8,6 +8,7 @@
 #include <string.h>
 #include <pthread.h>
 #include <string.h>
+#include "parse.h"
 
 #define BUFFER_SIZE 256
 
@@ -36,17 +37,27 @@ void *th_operation(void *arg){
 
 int main(int argc, char *argv[]) {
 
-    if (argc != 3) { 
+    if (argc < 3) {
         char error[BUFFER_SIZE];
         char *s = strerror(EINVAL);
         sprintf(error, "Error %d: %s\n"
-                       "Program usage: Qn <-t nsecs> [-l nplaces] [-n nthreads] fifoname\nWithout flags [-l nplaces] [-n nthreads] in the first submission.\n",
-                EINVAL, s);
+                       "Program usage: Qn <-t nsecs> [-l nplaces] [-n nthreads] fifoname", EINVAL, s);
         write(STDERR_FILENO, error, strlen(error));
         return EINVAL;
     }
 
-    char *req_fifo_path = argv[2];
+    // error | | | | fifoname | threads | places | secs
+    int flags;
+    parse_info_t info;
+    init_parse_info(&info);
+    flags = parse_cmd(argc - 1, &argv[1], &info);
+
+    if (flags & FLAG_ERR) {
+        free_parse_info(&info);
+        return -1;
+    }
+
+    char *req_fifo_path = info.path;
 
     mkfifo(req_fifo_path, 0660);
     int req_fifo = open(req_fifo_path, O_RDONLY);

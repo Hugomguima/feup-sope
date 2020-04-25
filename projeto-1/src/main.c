@@ -47,8 +47,7 @@ int main(int argc, char *argv[] /*, char * envp[]*/) {
             "Program usage: simpledu -l [path] [-a] [-b] [-B size] [-L] [-S] "
             "[--max-depth=N]");
     }
-    int subprocess =
-        0;            // indicates if this is a subprocess or the main process
+    int subprocess = 0; // indicates if this is a subprocess or the main process
     int ppipe_write;  // pipe to write to parent in case of subprocess
     int log_file_fd;
     struct timeval init_time;

@@ -6,6 +6,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <errno.h>
 
 /*----------------------------------------------------------------------------*/
 /*                              STRING FUNCTIONS                              */
@@ -29,7 +30,23 @@ int str_find(const char *str, const char *pattern, int pos) {
     return -1;
 }
 
-char** str_split(const char *str, const char *delim) {
+int rtrim(char *str, char trimmed, int mode) {
+    if (str == NULL || trimmed == 0) return -1;
+    if (mode != MODE_DELETE && mode != MODE_RMDUP) return -1;
+
+    int end = strlen(str) - 1;
+
+    while (end >= 0 && str[end] == trimmed) end--;
+
+    if (mode == MODE_RMDUP && end != (int)strlen(str) - 1) {
+        str[end + 2] = 0;
+    } else {
+        str[end + 1] = 0;
+    }
+    return 0;
+}
+
+char **str_split(const char *str, const char *delim) {
     if (str == NULL || delim == NULL) return NULL;
 
     char **result = NULL;
@@ -37,13 +54,13 @@ char** str_split(const char *str, const char *delim) {
     int pos = 0;
     char *dup = strdup(str);
 
-    while ((pos = str_find(dup, delim, pos)) != -1) { // while there's matches
+    while ((pos = str_find(dup, delim, pos)) != -1) {  // while there's matches
         count++;
     }
 
-    count += 2; // add one for last group and one for NULL pointer
+    count += 2;  // add one for last group and one for NULL pointer
 
-    result = (char**)malloc(sizeof(char*) * count);
+    result = (char **)malloc(sizeof(char *) * count);
 
     if (result != NULL) {
         int index = 0;
@@ -82,4 +99,29 @@ int str_isAlpha(const char *str) {
         if (!((ch >= 'A' && ch <= 'Z') || (ch >= 'a' && ch <= 'z'))) return 0;
 
     return 1;
+}
+
+char *str_cat(char *s1, char *s2, int n) {
+    int len1 = (int)strlen(s1);
+    int len2 = (n < (int)strlen(s2)) ? n : (int)strlen(s2);
+
+    char *res = (char *)malloc(sizeof(char) * (len1 + len2 + 1));
+
+    if (res == NULL) {
+        char *error = strerror(errno);
+        write(STDERR_FILENO, error, strlen(error));
+        write(STDERR_FILENO, "\n", 1);
+        return NULL;
+    }
+
+    res = strcpy(res, s1);
+
+    if (res == NULL) {
+        char *error = strerror(errno);
+        write(STDERR_FILENO, error, strlen(error));
+        write(STDERR_FILENO, "\n", 1);
+        return NULL;
+    }
+
+    return strncat(res, s2, len2);
 }
