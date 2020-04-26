@@ -49,6 +49,7 @@ void *th_operation(void *arg){
     char reply_fifo_path[BUFFER_SIZE];
     sprintf(reply_fifo_path, "/tmp/%d.%ld", request->pid, request->tid);
     int reply_fifo;
+
     if ((reply_fifo = open(reply_fifo_path, O_WRONLY)) == -1) {
         free(request);
         return NULL;
@@ -78,10 +79,6 @@ void *th_operation(void *arg){
     }
 
     if (close(reply_fifo)) {
-        return NULL;
-    }
-
-    if (unlink(reply_fifo_path)) {
         return NULL;
     }
 
@@ -167,7 +164,6 @@ int main(int argc, char *argv[]) {
             }
         }
 
-
         if (bath_open) {
             request = (request_t*)malloc(sizeof(request_t));
 
@@ -179,7 +175,7 @@ int main(int argc, char *argv[]) {
                 perror("read request");
                 return errno;
             }
-            printf("received request");
+
             if (pthread_create(&tid, NULL, th_operation, request)) {
                 free_sync();
                 close(req_fifo);

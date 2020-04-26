@@ -42,13 +42,19 @@ void *th_request(void *arg) {
     char reply_fifo_path[BUFFER_SIZE];
     sprintf(reply_fifo_path, "/tmp/%d.%ld", request.pid, request.tid);
 
+    if (mkfifo(reply_fifo_path, 0660)) {
+        perror("make fifo");
+        return NULL;
+    }
 
-    int reply_fifo = open(reply_fifo_path, O_CREAT | O_RDONLY);
-    mkfifo(reply_fifo_path, 0660);
+    int reply_fifo;
+    if ((reply_fifo = open(reply_fifo_path, O_RDONLY | O_NONBLOCK)) == -1) {
+        unlink(reply_fifo_path);
+        perror("open fifo");
+        return NULL;
+    }
 
     sem_t *sem_reply;
-
-    printf("teste1\n");
 
     if ((sem_reply = sem_open_reply(request.pid, request.tid)) == NULL) {
         close(reply_fifo);
@@ -57,17 +63,12 @@ void *th_request(void *arg) {
         return NULL;
     }
 
-    printf("teste2\n");
-
     if (sem_wait_send_request()) {
         close(reply_fifo);
         unlink(reply_fifo_path);
         sem_free_reply(sem_reply, request.pid, request.tid);
         return NULL;
     }
-
-    printf("teste3\n");
-
 
     if (write_request(req_fifo, &request)) {
         close(reply_fifo);
@@ -111,7 +112,7 @@ void *th_request(void *arg) {
         return NULL;
     }
 
-    printf("Reply ID: %d\nReply PID: %d\nReply TID: %ld\nReply Dur: %d\nReply PL: %d", reply.id, reply.pid, reply.tid, reply.dur, reply.pl);
+    printf("Reply ID: %d\nReply PID: %d\nReply TID: %ld\nReply Dur: %d\nReply PL: %d\n\n", reply.id, reply.pid, reply.tid, reply.dur, reply.pl);
     return NULL;
 }
 
@@ -165,7 +166,8 @@ int main(int argc, char *argv[]) {
     int thread_counter = 0;
 
     while(time(NULL) < finish_time) {
-        sleep(2);
+        perror("before\n");
+        if (usleep(800000) == -1) { perror("why? "); }
         printf("%d %d\n", thread_counter, MAX_THREADS);
         if(thread_counter >= MAX_THREADS){
             printf("Reached %d threads (Max Ammount)\n", thread_counter);
@@ -181,5 +183,4 @@ int main(int argc, char *argv[]) {
         pthread_join(threads[i], NULL);
     }
 
-    return 0;
 }
