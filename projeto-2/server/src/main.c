@@ -56,7 +56,7 @@ void *th_operation(void *arg){
 
     sem_t *sem_reply;
 
-    if (sem_open_reply(sem_reply, request->pid, request->tid)) {
+    if ((sem_reply = sem_open_reply(request->pid, request->tid)) == NULL) {
         close(reply_fifo);
         unlink(reply_fifo_path);
         return NULL;

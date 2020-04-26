@@ -108,21 +108,18 @@ int sem_post_receive_request() {
 /*                              REPLY SEMAPHORE                               */
 /*----------------------------------------------------------------------------*/
 
-int sem_open_reply(sem_t *sem_reply, pid_t pid, pthread_t tid) {
-    if (sem_reply == NULL) {
-        errno = EINVAL;
-        return errno;
-    }
-
+sem_t* sem_open_reply(pid_t pid, pthread_t tid) {
     char sem_name[256];
     sprintf(sem_name, "%s%d.%ld", SEM_PREFIX, pid, tid);
 
+    sem_t *sem_reply;
+
     if ((sem_reply = sem_open(sem_name, O_CREAT, 0600, 0)) == SEM_FAILED) {
         perror("open reply semaphore");
-        return errno;
+        return NULL;
     }
 
-    return 0;
+    return sem_reply;
 }
 
 int sem_wait_reply(sem_t *sem_reply) {

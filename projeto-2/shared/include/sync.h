@@ -35,7 +35,7 @@ int sem_post_receive_request();
 /*                              REPLY SEMAPHORE                               */
 /*----------------------------------------------------------------------------*/
 
-int sem_open_reply(sem_t *sem_reply, pid_t pid, pthread_t tid);
+sem_t* sem_open_reply(pid_t pid, pthread_t tid);
 
 int sem_wait_reply(sem_t *sem_reply);
 

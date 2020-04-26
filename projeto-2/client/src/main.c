@@ -23,7 +23,7 @@
 #include <pthread.h>
 
 int ID_ORDER = 0;
-#define MAX_THREADS     100
+#define MAX_THREADS     4
 
 #define BUFFER_SIZE 256
 
@@ -48,11 +48,16 @@ void *th_request(void *arg) {
 
     sem_t *sem_reply;
 
-    if (sem_open_reply(sem_reply, request.pid, request.tid)) {
+    printf("teste1\n");
+
+    if ((sem_reply = sem_open_reply(request.pid, request.tid)) == NULL) {
         close(reply_fifo);
         unlink(reply_fifo_path);
+        perror("open reply semaphore");
         return NULL;
     }
+
+    printf("teste2\n");
 
     if (sem_wait_send_request()) {
         close(reply_fifo);
@@ -60,6 +65,10 @@ void *th_request(void *arg) {
         sem_free_reply(sem_reply, request.pid, request.tid);
         return NULL;
     }
+
+    printf("teste3\n");
+
+
     if (write_request(req_fifo, &request)) {
         close(reply_fifo);
         unlink(reply_fifo_path);
@@ -130,6 +139,7 @@ int main(int argc, char *argv[]) {
         return -1;
     }
 
+
     sem_t *client_sem;
     char req_fifo_path[BUFFER_SIZE];
 
@@ -144,10 +154,18 @@ int main(int argc, char *argv[]) {
 
     free_parse_info(&info);
 
+    if (init_sync(0)) {
+        close(req_fifo);
+        unlink(req_fifo_path);
+        perror("failed to init sync");
+        return errno;
+    }
+
+
     int thread_counter = 0;
 
     while(time(NULL) < finish_time) {
-        usleep(10000);
+        sleep(2);
         printf("%d %d\n", thread_counter, MAX_THREADS);
         if(thread_counter >= MAX_THREADS){
             printf("Reached %d threads (Max Ammount)\n", thread_counter);
