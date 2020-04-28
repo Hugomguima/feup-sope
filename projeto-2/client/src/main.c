@@ -5,6 +5,7 @@
 #include "protocol.h"
 #include "sync.h"
 #include "utils.h"
+#include "log.h"
 
 /* SYSTEM CALLS HEADERS */
 #include <fcntl.h>
@@ -30,14 +31,16 @@ int ID_ORDER = 0;
 char SEM_CLIENT[] = "/tmp/client_sem";
 
 void *th_request(void *arg) {
-    // É necessário fazer um while loop que seja capaz de verificar se há informação a ser passada (Busy waiting)
     if (arg == NULL) return NULL;
 
     request_t request;
 
     int req_fifo = *((int*)arg);
 
-    fill_request(&request, ID_ORDER++, getpid(), pthread_self(), 10/*5 + random() % 50*/);
+    fill_request(&request, ID_ORDER++, getpid(), pthread_self(), 10 /*5 + random() % 50*/);
+
+    if(write_log(request, "IWANT"))
+        perror("write log");
 
     char reply_fifo_path[BUFFER_SIZE];
     sprintf(reply_fifo_path, "/tmp/%d.%ld", request.pid, request.tid);
@@ -112,7 +115,8 @@ void *th_request(void *arg) {
         return NULL;
     }
 
-    printf("Reply ID: %d\nReply PID: %d\nReply TID: %ld\nReply Dur: %d\nReply PL: %d\n\n", reply.id, reply.pid, reply.tid, reply.dur, reply.pl);
+    if(write_log(reply, "IAMIN | CLOSD | FAILD"))
+        perror("write log");
     return NULL;
 }
 
@@ -166,9 +170,10 @@ int main(int argc, char *argv[]) {
     int thread_counter = 0;
 
     while(time(NULL) < finish_time) {
-        perror("before\n");
-        if (usleep(800000) == -1) { perror("why? "); }
-        printf("%d %d\n", thread_counter, MAX_THREADS);
+        if (usleep(800000) == -1) { 
+            perror("error usleep"); 
+        }
+
         if(thread_counter >= MAX_THREADS){
             printf("Reached %d threads (Max Ammount)\n", thread_counter);
             break;
