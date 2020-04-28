@@ -65,13 +65,9 @@ void *th_operation(void *arg) {
 
     request_t reply;
     fill_reply(&reply, request->id, request->pid, request->tid, request->dur, order++);
-    // -- Joins bathroom
-    if(write_log(reply, "ENTER")) // Send this to client and he will write in log IAMIN
+    if(write_log(reply, "ENTER"))
         perror("write log");
 
-    // -- Leave bathroom after x seconds
-    if(write_log(reply, "TIMUP")) // Write when time up
-        perror("write log");
     free(request);
 
     if (write_reply(reply_fifo, &reply)) {
@@ -87,9 +83,11 @@ void *th_operation(void *arg) {
     }
 
     if (close(reply_fifo)) {
-        
         return NULL;
     }
+
+    if(write_log(reply, "TIMUP")) // Write when time up
+        perror("write log");
 
     return NULL;
 }

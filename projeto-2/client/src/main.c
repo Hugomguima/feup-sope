@@ -37,7 +37,7 @@ void *th_request(void *arg) {
 
     int req_fifo = *((int*)arg);
 
-    fill_request(&request, ID_ORDER++, getpid(), pthread_self(), 10 /*5 + random() % 50*/);
+    fill_request(&request, ID_ORDER++, getpid(), pthread_self(), 5 + random() % 50);
 
     if(write_log(request, "IWANT"))
         perror("write log");
@@ -95,11 +95,16 @@ void *th_request(void *arg) {
 
     request_t reply;
     if (read_reply(reply_fifo, &reply)) {
+        if(write_log(reply, "CLOSD"))
+            perror("write log");
         close(reply_fifo);
         unlink(reply_fifo_path);
         sem_free_reply(sem_reply, request.pid, request.tid);
         return NULL;
     }
+
+    if(write_log(reply, "IAMIN"))
+        perror("write log");
 
     if (sem_free_reply(sem_reply, request.pid, request.tid)) {
         close(reply_fifo);
@@ -115,8 +120,7 @@ void *th_request(void *arg) {
         return NULL;
     }
 
-    if(write_log(reply, "IAMIN | CLOSD | FAILD"))
-        perror("write log");
+    
     return NULL;
 }
 
