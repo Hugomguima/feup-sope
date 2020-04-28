@@ -73,4 +73,4 @@ or can be run via the symbolic link created by `make`
 
 ## Synchronization mechanisms
 
-<img src="./images/sync_system.png" width="650px" align="center">
+<img src="./images/sync_system.png" width="800px" align="center">
