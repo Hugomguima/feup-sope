@@ -53,7 +53,7 @@ QCFLAGS = -Wall -pthread
 
 # Dependencies
 # --- Shared Dependencies
-SDEPS = $(SODIR)/utils.o $(SODIR)/protocol.o
+SDEPS = $(SODIR)/utils.o $(SODIR)/protocol.o $(SODIR)/sync.o $(SODIR)/log.o
 # --- Client Dependencies
 UDEPS = $(SDEPS) $(UODIR)/parse.o
 UMAIN = main.o

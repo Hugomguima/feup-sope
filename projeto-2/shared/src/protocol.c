@@ -37,7 +37,7 @@ int write_request(int fd, const request_t *request) {
     return 0;
 }
 
-int read_request(int fd, const request_t *request) {
+int read_request(int fd, request_t *request) {
     if (read(fd, request, sizeof(request_t)) != sizeof(request_t)) {
         return errno;
     }
@@ -51,7 +51,7 @@ int write_reply(int fd, const request_t *reply) {
     return 0;
 }
 
-int read_reply(int fd, const request_t *reply) {
+int read_reply(int fd, request_t *reply) {
     if (read(fd, reply, sizeof(request_t)) != sizeof(request_t)) {
         return errno;
     }

@@ -2,7 +2,10 @@
 
 /* INCLUDE HEADERS */
 #include "parse.h"
+#include "protocol.h"
+#include "sync.h"
 #include "utils.h"
+#include "log.h"
 
 /* SYSTEM CALLS HEADERS */
 #include <fcntl.h>
@@ -12,6 +15,7 @@
 
 /* C LIBRARY HEADERS */
 #include <errno.h>
+#include <semaphore.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -20,45 +24,99 @@
 #include <pthread.h>
 
 int ID_ORDER = 0;
-int MAX_THREADS = 100;
-
-typedef struct {
-    int id;
-    pid_t pid;
-    pthread_t tid;
-    int dur;
-    int pl;
-} request_t;
+#define MAX_THREADS     4
 
 #define BUFFER_SIZE 256
 
-char req_fifo_path[256];
+char SEM_CLIENT[] = "/tmp/client_sem";
 
 void *th_request(void *arg) {
-    // É necessário fazer um while loop que seja capaz de verificar se há informação a ser passada (Busy waiting)
-    request_t *req = malloc(sizeof(request_t));
+    if (arg == NULL) return NULL;
 
-    req->id = ID_ORDER;
-    req->pid = getpid();
-    req->tid = pthread_self();
-    req->dur = 10;
-    req->pl = -1;
+    request_t request;
 
-    int req_fifo = open(req_fifo_path, O_WRONLY);
-    write(req_fifo, req, sizeof(request_t));
-    close(req_fifo);
+    int req_fifo = *((int*)arg);
 
-    char ans_fifo_path[1024];
-    sprintf(ans_fifo_path, "/tmp/%d.%ld", req->pid, req->tid);
-    mkfifo(ans_fifo_path, 0660);
-    int ans_fifo = open(ans_fifo_path, O_RDONLY);
+    fill_request(&request, ID_ORDER++, getpid(), pthread_self(), 10 /*5 + random() % 50*/);
 
-    request_t *ans = malloc(sizeof(request_t));
-    read(ans_fifo, ans, sizeof(request_t));
-    printf("Request ID: %d\n", ans->id);
-    close(ans_fifo);
-    free(req);
-    free(ans);
+    if(write_log(request, "IWANT"))
+        perror("write log");
+
+    char reply_fifo_path[BUFFER_SIZE];
+    sprintf(reply_fifo_path, "/tmp/%d.%ld", request.pid, request.tid);
+
+    if (mkfifo(reply_fifo_path, 0660)) {
+        perror("make fifo");
+        return NULL;
+    }
+
+    int reply_fifo;
+    if ((reply_fifo = open(reply_fifo_path, O_RDONLY | O_NONBLOCK)) == -1) {
+        unlink(reply_fifo_path);
+        perror("open fifo");
+        return NULL;
+    }
+
+    sem_t *sem_reply;
+
+    if ((sem_reply = sem_open_reply(request.pid, request.tid)) == NULL) {
+        close(reply_fifo);
+        unlink(reply_fifo_path);
+        perror("open reply semaphore");
+        return NULL;
+    }
+
+    if (sem_wait_send_request()) {
+        close(reply_fifo);
+        unlink(reply_fifo_path);
+        sem_free_reply(sem_reply, request.pid, request.tid);
+        return NULL;
+    }
+
+    if (write_request(req_fifo, &request)) {
+        close(reply_fifo);
+        unlink(reply_fifo_path);
+        sem_free_reply(sem_reply, request.pid, request.tid);
+        return NULL;
+    }
+    if (sem_post_receive_request()) {
+        close(reply_fifo);
+        unlink(reply_fifo_path);
+        sem_free_reply(sem_reply, request.pid, request.tid);
+        return NULL;
+    }
+
+    if (sem_wait_reply(sem_reply)) {
+        close(reply_fifo);
+        unlink(reply_fifo_path);
+        sem_free_reply(sem_reply, request.pid, request.tid);
+        return NULL;
+    }
+
+    request_t reply;
+    if (read_reply(reply_fifo, &reply)) {
+        close(reply_fifo);
+        unlink(reply_fifo_path);
+        sem_free_reply(sem_reply, request.pid, request.tid);
+        return NULL;
+    }
+
+    if (sem_free_reply(sem_reply, request.pid, request.tid)) {
+        close(reply_fifo);
+        unlink(reply_fifo_path);
+        return NULL;
+    }
+
+    if (close(reply_fifo)) {
+        return NULL;
+    }
+
+    if (unlink(reply_fifo_path)) {
+        return NULL;
+    }
+
+    if(write_log(reply, "IAMIN | CLOSD | FAILD"))
+        perror("write log");
     return NULL;
 }
 
@@ -71,6 +129,7 @@ int main(int argc, char *argv[]) {
         write(STDERR_FILENO, error, strlen(error));
         return EINVAL;
     }
+
 
     pthread_t threads[MAX_THREADS];
 
@@ -85,25 +144,47 @@ int main(int argc, char *argv[]) {
         return -1;
     }
 
+
+    sem_t *client_sem;
+    char req_fifo_path[BUFFER_SIZE];
+
     long int finish_time = time(NULL) + info.exec_secs;
     sprintf(req_fifo_path, "/tmp/%s", info.path);
 
+    int req_fifo;
+    if ((req_fifo = open(req_fifo_path, O_WRONLY)) == -1) {
+        perror("fifo error");
+        return errno;
+    }
+
+    free_parse_info(&info);
+
+    if (init_sync(0)) {
+        close(req_fifo);
+        unlink(req_fifo_path);
+        perror("failed to init sync");
+        return errno;
+    }
+
+
+    int thread_counter = 0;
+
     while(time(NULL) < finish_time) {
-        usleep(10000);
-        printf("%d %d\n",ID_ORDER, MAX_THREADS);
-        if(ID_ORDER >= MAX_THREADS){
-            printf("Reached %d threads (Max Ammount)\n",ID_ORDER);
-            return 1;
+        if (usleep(800000) == -1) { 
+            perror("error usleep"); 
+        }
+
+        if(thread_counter >= MAX_THREADS){
+            printf("Reached %d threads (Max Ammount)\n", thread_counter);
+            break;
         }
         else {
-            pthread_create(&threads[ID_ORDER], NULL, th_request, NULL);
-            ID_ORDER++;
+            pthread_create(&threads[thread_counter], NULL, th_request, &req_fifo);
+            thread_counter++;
         }
     }
 
-    for(int i = 0; i < MAX_THREADS; i++){
-        pthread_detach(&threads[i]);
+    for (int i = 0; i < MAX_THREADS; i++) {
+        pthread_join(threads[i], NULL);
     }
-
-    return 0;
 }

@@ -17,13 +17,17 @@ typedef struct request request_t;
 /**
  * @brief Request/Reply
  */
-typedef struct request {
+struct request {
     int         id;
     pid_t       pid;
     pthread_t   tid;
     int         dur;
     int         pl;
 };
+
+/*----------------------------------------------------------------------------*/
+/*                              REQUEST PROTOCOL                              */
+/*----------------------------------------------------------------------------*/
 
 /**
  * @brief Write request to the file
@@ -41,7 +45,7 @@ int write_request(int fd, const request_t *request);
  * @param request   Pointer to request to be read
  * @return  0 if operation was successful, otherwise an error code
  */
-int read_request(int fd, const request_t *request);
+int read_request(int fd, request_t *request);
 
 /**
  * @brief Fills the request with the arguments given
@@ -54,6 +58,10 @@ int read_request(int fd, const request_t *request);
  * @return 0 if operation was sucessful, otherwise -1
  */
 int fill_request(request_t *request, int id, pid_t pid, pthread_t tid, int dur);
+
+/*----------------------------------------------------------------------------*/
+/*                              REPLY PROTOCOL                                */
+/*----------------------------------------------------------------------------*/
 
 /**
  * @brief Write reply to the file
@@ -71,7 +79,7 @@ int write_reply(int fd, const request_t *reply);
  * @param reply     Pointer to reply to be read
  * @return  0 if operation was successful, otherwise an error code
  */
-int read_reply(int fd, const request_t *reply);
+int read_reply(int fd, request_t *reply);
 
 /**
  * @brief Fills the reply with the arguments given
