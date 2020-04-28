@@ -65,11 +65,18 @@ void *th_operation(void *arg) {
 
     request_t reply;
     fill_reply(&reply, request->id, request->pid, request->tid, request->dur, order++);
-    if(write_log(reply, "ENTER | TIMUP ! 2LATE | GAVUP"))
+    // -- Joins bathroom
+    if(write_log(reply, "ENTER")) // Send this to client and he will write in log IAMIN
+        perror("write log");
+
+    // -- Leave bathroom after x seconds
+    if(write_log(reply, "TIMUP")) // Write when time up
         perror("write log");
     free(request);
 
     if (write_reply(reply_fifo, &reply)) {
+        if(write_log(reply, "GAVEUP")) //  servidor já não consegue responder a pedido porque FIFO privado do cliente fechou
+            perror("write log");
         return NULL;
     }
 
@@ -80,6 +87,7 @@ void *th_operation(void *arg) {
     }
 
     if (close(reply_fifo)) {
+        
         return NULL;
     }
 
@@ -197,6 +205,10 @@ int main(int argc, char *argv[]) {
                 perror("server thread detach");
                 return errno;
             }
+        }
+        else {
+            if(write_log(*request, "2LATE")) // write if is received a request and bath is already closed
+                perror("write log");
         }
     }
 
