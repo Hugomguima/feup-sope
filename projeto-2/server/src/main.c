@@ -5,6 +5,7 @@
 #include "protocol.h"
 #include "sync.h"
 #include "utils.h"
+#include "log.h"
 
 /* SYSTEM CALLS HEADERS */
 #include <fcntl.h>
@@ -65,7 +66,8 @@ void *th_operation(void *arg){
 
     request_t reply;
     fill_reply(&reply, request->id, request->pid, request->tid, request->dur, order++);
-
+    if(write_log(reply, "ENTER | TIMUP ! 2LATE | GAVUP"))
+        perror("write log");
     free(request);
 
     if (write_reply(reply_fifo, &reply)) {
@@ -175,6 +177,9 @@ int main(int argc, char *argv[]) {
                 perror("read request");
                 return errno;
             }
+
+             if(write_log(*request, "RECVD"))
+                perror("write log");
 
             if (pthread_create(&tid, NULL, th_operation, request)) {
                 free_sync();
