@@ -49,7 +49,7 @@ make clean
 ### Run
 The executable files are `./bin/` directory after you run the command `make` in terminal.
 
-To run the server, you must specify the time the server will be executing in the flag `-t` and the name of the public channel from which the server will accept requests
+To run the server, you must specify the time the server will be executing in the flag `-t` and the name of the public channel from which the server will accept requests, can additionally specify the maximum number of threads and the capacity of the bathroom
 ```sh
 ./bin/Qn <-t nsecs> [-l nplaces] [-n nthreads] fifoname
 ```
@@ -58,8 +58,7 @@ or can be run via the symbolic link created by `make`
 ./Qn <-t nsecs> [-l nplaces] [-n nthreads] fifoname
 ```
 
-
-To run a client server, you must specify the time the client will be executing in the flag `-t` and the name of the public channel of the server to which the client will send requests
+To run the client, you must specify the time the client will be executing in the flag `-t` and the name of the public channel of the server to which the client will send requests
 ```sh
 ./bin/Un <-t nsecs> fifoname
 ```
@@ -69,7 +68,20 @@ or can be run via the symbolic link created by `make`
 ```
 
 ## Description
+The aim of the project was to develop a client-server application capable of dealing with conflict situations when accessing shared areas.  
+The shared area is a bathroom with several unisex seats, controlled by a ***Q*** process (server) to which requests for user access are addressed.  
+Access requests are sent through a ***U*** multithreaded process (client), and the time required by the interested party to be in a place of the sanitary facilities is indicated by it. Orders will stay in a service queue until they have a turn, and at such time, the respective user accesses a place on the premises during the requested time, under the control of the ***Q*** server, then the resource is released to another user.
 
+### Flag Description
+In the server program ***Q***:
+- `-t nsecs` - approximate number of seconds that the program should work
+- `-l nplaces` - bathroom capacity
+- `-n nthreads` – maximum number of thread to fulfil requests
+- `fifoname` – name of the public channel (***FIFO***) to be created by the server to fulfil requests
+
+In the client program ***U***:
+- `-t nsecs` - approximate number of seconds that the program should work
+- `fifoname` – public channel name (***FIFO***) for communication with the server
 
 ## Synchronization mechanisms
 
