@@ -88,14 +88,14 @@ void *my_alarm(void *arg) {
     return NULL;
 }
 
-int create_alarm(pthread_t tid, int exec_secs, pthread_t *ret) {
+int create_alarm(pthread_t tid, int exec_secs, int signal, pthread_t *ret) {
     void **args = malloc(sizeof(void*) * 3);
     args[0] = malloc(sizeof(pthread_t));
     args[1] = malloc(sizeof(int));
     args[2] = malloc(sizeof(int));
     *((pthread_t*)args[0]) = tid;
     *((int*)args[1]) = exec_secs;
-    *((int*)args[2]) = ((ret == NULL) ? SIGALRM : SIGUSR1);
+    *((int*)args[2]) = signal;
 
     pthread_t alarm_tid;
 

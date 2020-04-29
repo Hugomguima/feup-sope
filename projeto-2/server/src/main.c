@@ -118,7 +118,7 @@ int main(int argc, char *argv[]) {
 
     printf("%d\n", exec_secs);
 
-    if (create_alarm(pthread_self(), exec_secs, NULL)) {
+    if (create_alarm(pthread_self(), exec_secs, SIGALRM, NULL)) {
         return error_sys(argv[0], "couldn't create alarm");
     }
 

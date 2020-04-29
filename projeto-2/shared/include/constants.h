@@ -3,7 +3,7 @@
 
 #define BUFFER_SIZE             256
 
-#define MAX_THREADS             3
+#define MAX_THREADS             100
 
 #define ALARM_CHILL             0
 #define ALARM_TRIGGERED         1
