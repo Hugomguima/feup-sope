@@ -18,13 +18,11 @@
 
 /* C LIBRARY HEADERS */
 #include <errno.h>
+#include <pthread.h>
 #include <semaphore.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-/* Miscellaneous */
-#include <pthread.h>
 
 int id_order = 0;
 int requesting = 1;
@@ -43,7 +41,6 @@ void free_shared_memory() {
 void end_requesting(int sig) {
     requesting = 0;
     alarm_status = ALARM_TRIGGERED;
-
     printf("REACHED\n");
 }
 
@@ -77,18 +74,21 @@ int main(int argc, char *argv[]) {
 
     printf("%d\n", exec_secs);
 
-    free_parse_info(&info);
 
     if (init_sync(0)) {
-        return error_sys(argv[0], "couldn't open synchronization system");
+        char error[BUFFER_SIZE];
+        sprintf(error, "couldn't synchronize with server of public channel %s", info.path);
+        return error_sys(argv[0], error);
     }
+
+    free_parse_info(&info);
 
     if (atexit(free_shared_memory)) {
         free_shared_memory();
         return error_sys(argv[0], "couldn't install atexit function");
     }
 
-    sem_init(&thread_counter, SEM_SHARED, 1);
+    sem_init(&thread_counter, SEM_SHARED, 3);
 
     struct sigaction alarm_action;
     alarm_action.sa_handler = end_requesting;
@@ -104,7 +104,10 @@ int main(int argc, char *argv[]) {
     #include <time.h>
     time_t initial = time(NULL);
     printf("%d\n", exec_secs);
-    alarm(exec_secs);
+
+    if (create_alarm(pthread_self(), exec_secs, NULL)) {
+        return error_sys(argv[0], "couldn't create alarm");
+    }
 
     while(requesting) {
 
@@ -136,7 +139,9 @@ int main(int argc, char *argv[]) {
                 pthread_exit(0);
             }
         }
-        if (usleep(MAX_DURATION)) printf("teste\n");
+        usleep(MAX_DURATION);
+
+        printf("Time: %d\n", time(NULL) - initial);
     }
 
     // DEV
@@ -174,7 +179,7 @@ void *th_request(void *arg) {
 
     int req_fifo;
     if ((req_fifo = open(req_fifo_path, O_WRONLY | O_NONBLOCK)) == -1) {
-        if (errno == EPIPE) { //  client couldn't open public request FIFO
+        if (errno == ENXIO || errno == ENOENT) { //  client couldn't open public request FIFO
             if(write_log(&request, "CLOSD")) {
                 char program[BUFFER_SIZE];
                 sprintf(program, "request %d", request.id);
@@ -265,20 +270,32 @@ void *th_request(void *arg) {
 
     int private_alarm_status = ALARM_CHILL;
     void private_alarm(int sig) {
+        printf("PRIVATE ALARM\n");
         private_alarm_status = ALARM_TRIGGERED;
     }
 
-    struct sigaction alarm_action;
-    alarm_action.sa_handler = private_alarm;
-    sigemptyset(&alarm_action.sa_mask);
-    alarm_action.sa_flags = 0;
-    if (sigaction(SIGALRM, &alarm_action, NULL)) {
+    struct sigaction private_alarm_action;
+    private_alarm_action.sa_handler = private_alarm;
+    sigemptyset(&private_alarm_action.sa_mask);
+    private_alarm_action.sa_flags = 0;
+    if (sigaction(SIGUSR1, &private_alarm_action, NULL)) {
         char program[BUFFER_SIZE];
         sprintf(program, "request %d", request.id);
         error_sys(program, "couldn't install alarm");
     }
 
-    alarm(REPLY_TOLERANCE);
+    pthread_t alarm_tid;
+
+    if (create_alarm(pthread_self(), REPLY_TOLERANCE, &alarm_tid)) {
+        char program[BUFFER_SIZE];
+        sprintf(program, "request %d", request.id);
+        error_sys(program, "couldn't create alarm");
+        close(reply_fifo);
+        unlink(reply_fifo_path);
+        sem_free_reply(sem_reply, request.pid, request.tid);
+        sem_post(&thread_counter);
+        return NULL;
+    }
 
     if (sem_wait_reply(sem_reply)) {
         char program[BUFFER_SIZE];
@@ -294,8 +311,18 @@ void *th_request(void *arg) {
         sem_post(&thread_counter);
         return NULL;
     }
+    printf("STOPPING\n");
 
-    alarm(0);
+    if (stop_alarm(alarm_tid)) {
+        char program[BUFFER_SIZE];
+        sprintf(program, "request %d", request.id);
+        error_sys(program, "couldn't stop alarm");
+        close(reply_fifo);
+        unlink(reply_fifo_path);
+        sem_free_reply(sem_reply, request.pid, request.tid);
+        sem_post(&thread_counter);
+        return NULL;
+    }
 
     request_t reply;
     if (read_reply(reply_fifo, &reply)) {

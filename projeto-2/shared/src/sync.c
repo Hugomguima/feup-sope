@@ -1,20 +1,22 @@
 /* MAIN HEADER */
 
 /* INCLUDE HEADERS */
+#include "constants.h"
+#include "error.h"
 
 /* SYSTEM CALLS HEADERS */
 #include <fcntl.h>
+#include <signal.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
 
 /* C LIBRARY HEADERS */
 #include <errno.h>
+#include <pthread.h>
 #include <semaphore.h>
 #include <stdio.h>
 #include <stdlib.h>
-
-/* Miscellaneous */
 
 char NAME_SEM_SEND_REQUEST[] = "/sem_send_request";
 char NAME_SEM_RECEIVE_REQUEST[] = "/sem_receive_request";
@@ -22,6 +24,100 @@ char SEM_PREFIX[] = "/sem_";
 
 sem_t *sem_send_request;
 sem_t *sem_receive_request;
+
+/*----------------------------------------------------------------------------*/
+/*                              ALARM                                         */
+/*----------------------------------------------------------------------------*/
+int alarm_counter = 0;
+int stopped_counter = 0;
+
+void stop_notification(int sig) { }
+
+void *my_alarm(void *arg) {
+    if (arg == NULL) {
+        char program[BUFFER_SIZE];
+        sprintf(program, "alarm %ld", pthread_self());
+        error_sys(program, "invalid argument");
+        return NULL;
+    }
+    void **args = (void**)arg;
+
+    if (args[0] == NULL || args[1] == NULL || args[2] == NULL) {
+        char program[BUFFER_SIZE];
+        sprintf(program, "alarm %ld", pthread_self());
+        error_sys(program, "invalid argument");
+        if (args[0] != NULL) free(args[0]);
+        if (args[1] != NULL) free(args[1]);
+        if (args[2] != NULL) free(args[2]);
+        free(arg);
+        return NULL;
+    }
+
+    pthread_t tid = *((pthread_t*)args[0]);
+    int exec_secs = *((int*)args[1]);
+    int signal = *((int*)args[2]);
+
+    struct sigaction alarm_deactivator;
+    alarm_deactivator.sa_handler = stop_notification;
+    sigemptyset(&alarm_deactivator.sa_mask);
+    alarm_deactivator.sa_flags = 0;
+    if (sigaction(SIGUSR2, &alarm_deactivator, NULL)) {
+        char program[BUFFER_SIZE];
+        sprintf(program, "alarm %ld", pthread_self());
+        error_sys(program, "couldn't install alarm %ld deactivator");
+        free(args[0]);
+        free(args[1]);
+        free(args[2]);
+        free(arg);
+        return NULL;
+    }
+
+    if (sleep(exec_secs) == 0) { // wasn't stopped
+        if (pthread_kill(tid, signal)) {
+            char program[BUFFER_SIZE];
+            sprintf(program, "alarm %ld", pthread_self());
+            char error[BUFFER_SIZE];
+            sprintf(error, "couldn't notify thread %ld", tid);
+            error_sys(program, error);
+        }
+    }
+    free(args[0]);
+    free(args[1]);
+    free(args[2]);
+    free(arg);
+    return NULL;
+}
+
+int create_alarm(pthread_t tid, int exec_secs, pthread_t *ret) {
+    void **args = malloc(sizeof(void*) * 3);
+    args[0] = malloc(sizeof(pthread_t));
+    args[1] = malloc(sizeof(int));
+    args[2] = malloc(sizeof(int));
+    *((pthread_t*)args[0]) = tid;
+    *((int*)args[1]) = exec_secs;
+    *((int*)args[2]) = ((ret == NULL) ? SIGALRM : SIGUSR1);
+
+    pthread_t alarm_tid;
+
+    if (pthread_create(&alarm_tid, NULL, my_alarm, args)) {
+        error_sys("alarm", "couldn't create alarm thread");
+        return -1;
+    }
+
+    if (pthread_detach(alarm_tid)) {
+        char error[BUFFER_SIZE];
+        sprintf(error, "couldn't detach alarm thread %ld", tid);
+        error_sys("alarm", error);
+        return -1;
+    }
+    if (ret != NULL) *ret = alarm_tid;
+    return 0;
+}
+
+int stop_alarm(pthread_t tid) {
+    return pthread_kill(tid, SIGUSR2);
+}
+
 
 /*----------------------------------------------------------------------------*/
 /*                              REQUEST SEMAPHORES                            */

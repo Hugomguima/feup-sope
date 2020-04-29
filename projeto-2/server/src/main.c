@@ -117,7 +117,10 @@ int main(int argc, char *argv[]) {
     time_t initial = time(NULL);
 
     printf("%d\n", exec_secs);
-    alarm(exec_secs);
+
+    if (create_alarm(pthread_self(), exec_secs, NULL)) {
+        return error_sys(argv[0], "couldn't create alarm");
+    }
 
     while (bath_open) {
         if (bath_open) {
@@ -205,8 +208,9 @@ int main(int argc, char *argv[]) {
             unlink(req_fifo_path);
             return errno;
         }
-
-        if(write_log(&ignored_request, "2LATE")) {
+        request_t error_reply;
+        fill_reply_error(&error_reply, ignored_request.id, ignored_request.pid, ignored_request.tid);
+        if(write_log(&error_reply, "2LATE")) {
             error_sys(argv[0], "couldn't write log");
         }
 
@@ -266,7 +270,15 @@ void *th_operation(void *arg) {
     if ((sem_reply = sem_open_reply(reply.pid, reply.tid)) == NULL) {
         char program[BUFFER_SIZE];
         sprintf(program, "reply %d", reply.id);
-        error_sys(program, "couldn't open private reply semaphore");
+        if (errno == ENOENT) { //  server couldn't write reply due to client closing the private FIFO
+            if(write_log(&reply, "GAVUP")) {
+                error_sys(program, "couldn't write log");
+            }
+        } else {
+            error_sys(program, "couldn't open private reply semaphore");
+            sem_post_reply(sem_reply);
+            return NULL;
+        }
         return NULL;
     }
 
@@ -289,7 +301,7 @@ void *th_operation(void *arg) {
     if ((reply_fifo = open(reply_fifo_path, O_WRONLY | O_NONBLOCK)) == -1) {
         char program[BUFFER_SIZE];
         sprintf(program, "reply %d", reply.id);
-        if (errno == EPIPE) { //  server couldn't write reply due to client closing the private FIFO
+        if (errno == ENXIO || errno == ENOENT) { //  server couldn't write reply due to client closing the private FIFO
             if(write_log(&reply, "GAVUP")) {
                 error_sys(program, "couldn't write log");
             }

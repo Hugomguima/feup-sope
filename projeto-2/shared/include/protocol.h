@@ -17,7 +17,7 @@ typedef struct request request_t;
 #define MAX_DURATION    999999
 #define MIN_DURATION    10000
 
-#define REPLY_TOLERANCE 1
+#define REPLY_TOLERANCE 5
 
 /**
  * @brief Request/Reply

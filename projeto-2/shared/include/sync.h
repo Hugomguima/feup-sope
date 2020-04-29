@@ -10,10 +10,18 @@
 #include <unistd.h>
 
 /* C LIBRARY HEADERS */
+#include <pthread.h>
 #include <semaphore.h>
 
-/* Miscellaneous */
-#include <pthread.h>
+/*----------------------------------------------------------------------------*/
+/*                              ALARM                                         */
+/*----------------------------------------------------------------------------*/
+
+void *my_alarm(void *arg);
+
+int create_alarm(pthread_t tid, int exec_secs, pthread_t *ret);
+
+int stop_alarm(pthread_t tid);
 
 /*----------------------------------------------------------------------------*/
 /*                              REQUEST SEMAPHORE                             */
