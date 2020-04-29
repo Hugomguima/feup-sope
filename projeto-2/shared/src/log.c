@@ -12,11 +12,15 @@
 #include <string.h>
 #include <unistd.h>
 
-int write_log(request_t reply, char *message) {
+int write_log(request_t *message, char *operation) {
+    if (message == NULL || operation == NULL) {
+        errno = EINVAL;
+        return -1;
+    }
     char buf[256];
-    sprintf(buf, "%ld ; %d ; %d ; %ld ; %d ; %d ; %s \n", time(NULL), reply.id, reply.pid, reply.tid, reply.dur, reply.pl, message);
+    sprintf(buf, "%ld \t; %d \t; %d \t; %ld \t; %d \t; %d \t; %s\n", time(NULL), message->id, message->pid, message->tid, message->dur, message->pl, operation);
     if (write(STDOUT_FILENO, buf, strlen(buf)) != strlen(buf)) {
-        return errno;
+        return -1;
     }
     return 0;
 }

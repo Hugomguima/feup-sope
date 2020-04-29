@@ -29,12 +29,10 @@ sem_t *sem_receive_request;
 
 int init_sync(int oflags) {
     if ((sem_send_request = sem_open(NAME_SEM_SEND_REQUEST, oflags, 0600, 0)) == SEM_FAILED) {
-        perror("open send request semaphore");
         return errno;
     }
 
     if ((sem_receive_request = sem_open(NAME_SEM_RECEIVE_REQUEST, oflags, 0600, 0)) == SEM_FAILED) {
-        perror("open receive request semaphore");
         return errno;
     }
 
@@ -48,24 +46,20 @@ int free_sync() {
 
     if (sem_send_request != NULL) {
         if (sem_close(sem_send_request)) {
-            perror("close send request semaphore");
             ret = errno;
         }
 
         if (sem_unlink(NAME_SEM_SEND_REQUEST)) {
-            perror("unlink send request semaphore");
             ret = errno;
         }
     }
 
     if (sem_receive_request != NULL) {
         if (sem_close(sem_receive_request)) {
-            perror("close receive request semaphore");
             ret = errno;
         }
 
         if (sem_unlink(NAME_SEM_RECEIVE_REQUEST)) {
-            perror("unlink receive request semaphore");
             ret = errno;
         }
     }
@@ -74,7 +68,6 @@ int free_sync() {
 
 int sem_wait_send_request() {
     if (sem_wait(sem_send_request)) {
-        perror("wait send request semaphore");
         return errno;
     }
     return 0;
@@ -82,15 +75,21 @@ int sem_wait_send_request() {
 
 int sem_post_send_request() {
     if (sem_post(sem_send_request)) {
-        perror("wait send request semaphore");
         return errno;
+    }
+    return 0;
+}
+
+int sem_getvalue_send_request(int *val) {
+    if (val == NULL) return -1;
+    if (sem_getvalue(sem_send_request, val)) {
+        return -1;
     }
     return 0;
 }
 
 int sem_wait_receive_request() {
     if (sem_wait(sem_receive_request)) {
-        perror("wait receive request semaphore");
         return errno;
     }
     return 0;
@@ -98,8 +97,15 @@ int sem_wait_receive_request() {
 
 int sem_post_receive_request() {
     if (sem_post(sem_receive_request)) {
-        perror("wait receive request semaphore");
         return errno;
+    }
+    return 0;
+}
+
+int sem_getvalue_receive_request(int *val) {
+    if (val == NULL) return -1;
+    if (sem_getvalue(sem_receive_request, val)) {
+        return -1;
     }
     return 0;
 }
@@ -115,7 +121,6 @@ sem_t* sem_open_reply(pid_t pid, pthread_t tid) {
     sem_t *sem_reply;
 
     if ((sem_reply = sem_open(sem_name, O_CREAT, 0600, 0)) == SEM_FAILED) {
-        perror("open reply semaphore");
         return NULL;
     }
 
@@ -129,7 +134,6 @@ int sem_wait_reply(sem_t *sem_reply) {
     }
 
     if (sem_wait(sem_reply)) {
-        perror("wait reply semaphore");
         return errno;
     }
     return 0;
@@ -142,7 +146,6 @@ int sem_post_reply(sem_t *sem_reply) {
     }
 
     if (sem_post(sem_reply)) {
-        perror("post reply semaphore");
         return errno;
     }
     return 0;
@@ -155,7 +158,6 @@ int sem_close_reply(sem_t *sem_reply) {
     }
 
     if (sem_close(sem_reply)) {
-        perror("close reply semaphore");
         return errno;
     }
 
@@ -169,7 +171,6 @@ int sem_unlink_reply(const char *sem_name) {
     }
 
     if (sem_unlink(sem_name)) {
-        perror("unlink reply semaphore");
         return errno;
     }
 

@@ -15,7 +15,7 @@
 /* Miscellaneous */
 #include <pthread.h>
 
-int fill_request(request_t *request, int id, pid_t pid, pthread_t tid, int dur) {
+int fill_request(request_t *request, int id, pid_t pid, pthread_t tid) {
     if (request == NULL) {
         errno = EINVAL;
         return errno;
@@ -24,7 +24,7 @@ int fill_request(request_t *request, int id, pid_t pid, pthread_t tid, int dur) 
     request->id = id;
     request->pid = pid;
     request->tid = tid;
-    request->dur = dur;
+    request->dur = MIN_DURATION + random() % (MAX_DURATION - MIN_DURATION);
     request->pl = -1;
 
     return 0;

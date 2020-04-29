@@ -14,6 +14,11 @@
 
 typedef struct request request_t;
 
+#define MAX_DURATION    999999
+#define MIN_DURATION    10000
+
+#define REPLY_TOLERANCE 1
+
 /**
  * @brief Request/Reply
  */
@@ -57,7 +62,7 @@ int read_request(int fd, request_t *request);
  * @param dur       Request duration
  * @return 0 if operation was sucessful, otherwise -1
  */
-int fill_request(request_t *request, int id, pid_t pid, pthread_t tid, int dur);
+int fill_request(request_t *request, int id, pid_t pid, pthread_t tid);
 
 /*----------------------------------------------------------------------------*/
 /*                              REPLY PROTOCOL                                */

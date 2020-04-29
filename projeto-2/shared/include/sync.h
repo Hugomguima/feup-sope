@@ -27,9 +27,13 @@ int sem_wait_send_request();
 
 int sem_post_send_request();
 
+int sem_getvalue_send_request(int *val);
+
 int sem_wait_receive_request();
 
 int sem_post_receive_request();
+
+int sem_getvalue_receive_request(int *val);
 
 /*----------------------------------------------------------------------------*/
 /*                              REPLY SEMAPHORE                               */
