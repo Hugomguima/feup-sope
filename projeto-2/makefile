@@ -62,8 +62,8 @@ QDEPS = $(SDEPS) $(QODIR)/parse.o
 QMAIN = main.o
 
 # Executable
-UTARGET = Un
-QTARGET = Qn
+UTARGET = U1
+QTARGET = Q1
 
 .PHONY: all clean client server shared
 

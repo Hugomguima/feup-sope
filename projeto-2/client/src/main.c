@@ -78,8 +78,6 @@ int main(int argc, char *argv[]) {
 
     int exec_secs = info.exec_secs;
 
-    printf("%d\n", exec_secs);
-
     if ((req_fifo = open(req_fifo_path, O_WRONLY | O_NONBLOCK)) == -1) {
         char error[BUFFER_SIZE];
         sprintf(error, "no public request FIFO of name %s", info.path);
