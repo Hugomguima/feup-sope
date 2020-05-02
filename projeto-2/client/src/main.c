@@ -155,7 +155,7 @@ int main(int argc, char *argv[]) {
                 pthread_exit(0);
             }
         }
-        usleep(100);
+        usleep(50000);
     }
 
     // DEV
@@ -302,6 +302,7 @@ void *th_request(void *arg) {
                 error_sys(program, "couldn't write log");
             }
         }
+        stop_alarm(alarm_tid);
         close(reply_fifo);
         unlink(reply_fifo_path);
         sem_free_reply(sem_reply, request.pid, request.tid);
