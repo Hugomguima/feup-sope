@@ -114,7 +114,6 @@ int main(int argc, char *argv[]) {
     // DEV
     #include <time.h>
     time_t initial = time(NULL);
-    printf("%d\n", exec_secs);
 
 
     alarm(exec_secs);
@@ -123,8 +122,6 @@ int main(int argc, char *argv[]) {
     }*/
 
     main_thread = pthread_self();
-
-    printf("MAIN: %ld\n", main_thread);
 
     while(requesting) {
 
@@ -162,7 +159,7 @@ int main(int argc, char *argv[]) {
     }
 
     // DEV
-    printf("exited in %ds\n", (int)(time(NULL)-initial));
+    printf("Closed in %ds\n", (int)(time(NULL)-initial));
 
     pthread_exit(0);
 }
@@ -276,7 +273,6 @@ void *th_request(void *arg) {
 
     int private_alarm_status = ALARM_CHILL;
     void private_alarm(int sig) {
-        printf("PRIVATE ALARM\n");
         private_alarm_status = ALARM_TRIGGERED;
     }
 

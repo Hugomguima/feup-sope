@@ -119,8 +119,6 @@ int main(int argc, char *argv[]) {
     // DEV
     time_t initial = time(NULL);
 
-    printf("%d\n", exec_secs);
-
     alarm(exec_secs);
     /*if (create_alarm(pthread_self(), exec_secs, SIGALRM, NULL)) {
         return error_sys(argv[0], "couldn't create alarm");
@@ -237,7 +235,7 @@ int main(int argc, char *argv[]) {
     }*/
 
     // DEV
-    printf("exited in %ds\n", (int)(time(NULL)-initial));
+    printf("Closed in %ds\n", (int)(time(NULL)-initial));
 
     // Transfered to atexit()
     /*if (free_sync()) {
