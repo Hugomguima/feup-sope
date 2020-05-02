@@ -117,9 +117,10 @@ int main(int argc, char *argv[]) {
     printf("%d\n", exec_secs);
 
 
-    if (create_alarm(pthread_self(), exec_secs, SIGALRM, &main_alarm)) {
+    alarm(exec_secs);
+    /*if (create_alarm(pthread_self(), exec_secs, SIGALRM, &main_alarm)) {
         return error_sys(argv[0], "couldn't create alarm");
-    }
+    }*/
 
     main_thread = pthread_self();
 
@@ -133,12 +134,13 @@ int main(int argc, char *argv[]) {
             }
             break;
         }
-
-        if (pthread_create(&tid, NULL, th_request, req_fifo_path)) {
+        int *arg = (int*)malloc(sizeof(int));
+        *arg = id_order;
+        if (pthread_create(&tid, NULL, th_request, arg)) {
             if (error_sys_ignore_alarm(argv[0], "couldn't create request thread", alarm_status)) {
                 pthread_exit(0);
             }
-            if (pthread_create(&tid, NULL, th_request, NULL)) {
+            if (pthread_create(&tid, NULL, th_request, arg)) {
                 error_sys(argv[0], "couldn't create request thread");
                 pthread_exit(0);
             }
@@ -155,7 +157,8 @@ int main(int argc, char *argv[]) {
                 pthread_exit(0);
             }
         }
-        usleep(50000);
+        id_order++;
+        usleep(10000);
     }
 
     // DEV
@@ -170,9 +173,13 @@ void *th_request(void *arg) {
         return NULL;
     }
 
+    int order = *((int*)arg);
+
     request_t request;
 
-    fill_request(&request, id_order++, getpid(), pthread_self());
+    fill_request(&request, order, getpid(), pthread_self());
+
+    free(arg);
 
     if(write_log(&request, "IWANT")) {
         char program[BUFFER_SIZE];
@@ -224,7 +231,7 @@ void *th_request(void *arg) {
         return NULL;
     }
 
-    if (sem_wait_send_request()) {
+    /*if (sem_wait_send_request()) {
         char program[BUFFER_SIZE];
         sprintf(program, "request %d", request.id);
         error_sys(program, "couldn't open private reply FIFO");
@@ -233,7 +240,8 @@ void *th_request(void *arg) {
         sem_free_reply(sem_reply, request.pid, request.tid);
         sem_post(&thread_counter);
         return NULL;
-    }
+    }*/
+
 
     if (write_request(req_fifo, &request)) {
         char program[BUFFER_SIZE];
@@ -241,7 +249,8 @@ void *th_request(void *arg) {
         if (errno == EPIPE) { //  client couldn't write to public request FIFO
             if (alarm_status == ALARM_CHILL) { // main thread still requesting
                 pthread_kill(main_thread, SIGALRM);
-                pthread_kill(main_alarm, SIGUSR2);
+                //pthread_kill(main_alarm, SIGUSR2);
+                alarm(0);
             }
             if(write_log(&request, "CLOSD")) {
                 error_sys(program, "couldn't write log");
@@ -283,7 +292,7 @@ void *th_request(void *arg) {
 
     pthread_t alarm_tid;
 
-    if (create_alarm(pthread_self(), REPLY_TOLERANCE, SIGUSR1, &alarm_tid)) {
+    /*if (create_alarm(pthread_self(), REPLY_TOLERANCE, SIGUSR1, &alarm_tid)) {
         char program[BUFFER_SIZE];
         sprintf(program, "request %d", request.id);
         error_sys(program, "couldn't create alarm");
@@ -292,9 +301,10 @@ void *th_request(void *arg) {
         sem_free_reply(sem_reply, request.pid, request.tid);
         sem_post(&thread_counter);
         return NULL;
-    }
+    }*/
 
     if (sem_wait_reply(sem_reply)) {
+        //stop_alarm(alarm_tid);
         char program[BUFFER_SIZE];
         sprintf(program, "request %d", request.id);
         if (error_sys_ignore_alarm(program, "error on waiting for private reply FIFO", private_alarm_status) == 0) {
@@ -302,7 +312,6 @@ void *th_request(void *arg) {
                 error_sys(program, "couldn't write log");
             }
         }
-        stop_alarm(alarm_tid);
         close(reply_fifo);
         unlink(reply_fifo_path);
         sem_free_reply(sem_reply, request.pid, request.tid);
@@ -310,7 +319,7 @@ void *th_request(void *arg) {
         return NULL;
     }
 
-    if (stop_alarm(alarm_tid)) {
+    /*if (stop_alarm(alarm_tid)) {
         char program[BUFFER_SIZE];
         sprintf(program, "request %d", request.id);
         error_sys(program, "couldn't stop alarm");
@@ -319,7 +328,7 @@ void *th_request(void *arg) {
         sem_free_reply(sem_reply, request.pid, request.tid);
         sem_post(&thread_counter);
         return NULL;
-    }
+    }*/
 
     request_t reply;
     if (read_reply(reply_fifo, &reply)) {

@@ -36,7 +36,9 @@ char req_fifo_path[BUFFER_SIZE];
 void close_bathroom(int sig) {
     bath_open = 0;
     alarm_status = ALARM_TRIGGERED;
-    chmod(req_fifo_path, 0440);
+    if (chmod(req_fifo_path, 0440)) {
+        error_sys("close", "error changing FIFO permissions");
+    }
 }
 
 void *th_operation(void *arg);
@@ -119,9 +121,10 @@ int main(int argc, char *argv[]) {
 
     printf("%d\n", exec_secs);
 
-    if (create_alarm(pthread_self(), exec_secs, SIGALRM, NULL)) {
+    alarm(exec_secs);
+    /*if (create_alarm(pthread_self(), exec_secs, SIGALRM, NULL)) {
         return error_sys(argv[0], "couldn't create alarm");
-    }
+    }*/
 
     int not_empty = request_queue_not_empty();
 
@@ -139,7 +142,12 @@ int main(int argc, char *argv[]) {
                 unlink(req_fifo_path);
                 return errno;
             }
-            break;
+            if (sem_post_send_request()) {
+                error_sys(argv[0], "couldn't unlock request queue");
+                close(req_fifo);
+                unlink(req_fifo_path);
+                return errno;
+            }
         }
         if (sem_wait_receive_request()) {
             if (error_sys_ignore_alarm(argv[0], "error on waiting for request", alarm_status)) {
@@ -337,17 +345,16 @@ void *th_operation(void *arg) {
             }
         }
 
-        if (sem_post_reply(sem_reply)) {
-            char program[BUFFER_SIZE];
-            sprintf(program, "reply %d", reply.id);
-            error_sys(program, "couldn't notify private reply semaphore");
-        }
-
         if (close(reply_fifo)) {
             char program[BUFFER_SIZE];
             sprintf(program, "reply %d", reply.id);
             error_sys(program, "couldn't close private reply FIFO");
         }
+    }
+    if (sem_post_reply(sem_reply)) {
+        char program[BUFFER_SIZE];
+        sprintf(program, "reply %d", reply.id);
+        error_sys(program, "couldn't notify private reply semaphore");
     }
 
     if (reply.dur > 0) {

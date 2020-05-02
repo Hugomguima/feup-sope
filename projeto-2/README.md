@@ -96,7 +96,6 @@ To parse the arguments passed via the command line, it was created two parsing m
 The structure of the parsing system is similar in both cases, returning a bit mask to identify which flags were present on the arguments, and additional information, such as the path, is returned in the argument by using a structure to store the additional information needed such as the *FIFO* name, and in the server side, the *maximum number of threads* and the *bathroom capacity*.
 
 ## Alarm
-
 To determine how long each process will be running we set up one alarm in client and server.
 The process will then receive a signal SIGALRM when the elapsed time has equal to the time passed as argument.
 In the signal handler function, the one variable will be set to have the value 0, so the main loop will stop and the program will end.
