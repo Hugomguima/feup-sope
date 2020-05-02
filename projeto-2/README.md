@@ -86,3 +86,17 @@ In the client program ***U***:
 ## Synchronization mechanisms
 
 <img src="./images/sync_system.png" width="800px" align="center">
+
+To solve synchronization issues we opted to use two public semaphores (represented above by the color green) and one private (represented above by the color red).
+
+## Implementation details
+
+## Parsing
+
+In both client and server we receive and parse the input coming from the command line in the file [client/src/parse.c](./client/src/parse.c) or [server/src/parse.c](./server/src/parse.c).
+
+## Alarm
+
+To determine how long each process will be running we set up one alarm in client and server. 
+The process will then receive a signal SIGALRM when the elapsed time has equal to the time passed as argument.
+In the signal handler function, the one variable will be set to have the value 0, so the main loop will stop and the program will end.
