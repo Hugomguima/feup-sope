@@ -303,7 +303,7 @@ void *th_request(void *arg) {
         return NULL;
     }*/
 
-    if (sem_wait_reply(sem_reply)) {
+    /*if (sem_wait_reply(sem_reply)) {
         //stop_alarm(alarm_tid);
         char program[BUFFER_SIZE];
         sprintf(program, "request %d", request.id);
@@ -317,7 +317,7 @@ void *th_request(void *arg) {
         sem_free_reply(sem_reply, request.pid, request.tid);
         sem_post(&thread_counter);
         return NULL;
-    }
+    }*/
 
     /*if (stop_alarm(alarm_tid)) {
         char program[BUFFER_SIZE];
