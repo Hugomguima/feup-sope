@@ -51,20 +51,20 @@ The executable files are `./bin/` directory after you run the command `make` in 
 
 To run the server, you must specify the time the server will be executing in the flag `-t` and the name of the public channel from which the server will accept requests, can additionally specify the maximum number of threads and the capacity of the bathroom
 ```sh
-./bin/Q1 <-t nsecs> [-l nplaces] [-n nthreads] fifoname
+./bin/Qn <-t nsecs> [-l nplaces] [-n nthreads] fifoname
 ```
 or can be run via the symbolic link created by `make`
 ```sh
-./Q1 <-t nsecs> [-l nplaces] [-n nthreads] fifoname
+./Qn <-t nsecs> [-l nplaces] [-n nthreads] fifoname
 ```
 
 To run the client, you must specify the time the client will be executing in the flag `-t` and the name of the public channel of the server to which the client will send requests
 ```sh
-./bin/U1 <-t nsecs> fifoname
+./bin/Un <-t nsecs> fifoname
 ```
 or can be run via the symbolic link created by `make`
 ```sh
-./U1 <-t nsecs> fifoname
+./Un <-t nsecs> fifoname
 ```
 
 ## Description
