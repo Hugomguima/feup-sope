@@ -350,6 +350,17 @@ void *th_request(void *arg) {
             sprintf(program, "reply %d", reply.id);
             error_sys(program, "couldn't write log");
         }
+    } else {
+        if (alarm_status == ALARM_CHILL) { // main thread still requesting
+            pthread_kill(main_thread, SIGALRM);
+            //pthread_kill(main_alarm, SIGUSR2);
+            alarm(0);
+        }
+        if (write_log(&reply, "CLOSD")) {
+            char program[BUFFER_SIZE];
+            sprintf(program, "reply %d", reply.id);
+            error_sys(program, "couldn't write log");
+        }
     }
 
     if (sem_free_reply(sem_reply, request.pid, request.tid)) {
