@@ -31,10 +31,12 @@
 int bath_open = 1;
 int alarm_status = ALARM_CHILL;
 int order = 1;
+char req_fifo_path[BUFFER_SIZE];
 
 void close_bathroom(int sig) {
     bath_open = 0;
     alarm_status = ALARM_TRIGGERED;
+    chmod(req_fifo_path, 0440);
 }
 
 void *th_operation(void *arg);
@@ -69,7 +71,6 @@ int main(int argc, char *argv[]) {
         return -1;
     }
 
-    char req_fifo_path[BUFFER_SIZE];
     sprintf(req_fifo_path, "/tmp/%s", info.path);
 
     int exec_secs = info.exec_secs;
@@ -122,75 +123,80 @@ int main(int argc, char *argv[]) {
         return error_sys(argv[0], "couldn't create alarm");
     }
 
-    while (bath_open) {
-        if (bath_open) {
-            if (sem_post_send_request()) {
-                if (error_sys_ignore_alarm(argv[0], "couldn't unlock request queue", alarm_status)) {
-                    close(req_fifo);
-                    unlink(req_fifo_path);
-                    return errno;
-                }
-                break;
+    int not_empty = request_queue_not_empty();
+
+    while (bath_open || not_empty) {
+        if (not_empty == -1) {
+            error_sys(argv[0], "error reading request queue");
+            close(req_fifo);
+            unlink(req_fifo_path);
+            return errno;
+        }
+
+        if (sem_post_send_request()) {
+            if (error_sys_ignore_alarm(argv[0], "couldn't unlock request queue", alarm_status)) {
+                close(req_fifo);
+                unlink(req_fifo_path);
+                return errno;
             }
-            if (sem_wait_receive_request()) {
-                if (error_sys_ignore_alarm(argv[0], "error on waiting for request", alarm_status)) {
-                    close(req_fifo);
-                    unlink(req_fifo_path);
-                    return errno;
-                }
-                break;
+            break;
+        }
+        if (sem_wait_receive_request()) {
+            if (error_sys_ignore_alarm(argv[0], "error on waiting for request", alarm_status)) {
+                close(req_fifo);
+                unlink(req_fifo_path);
+                return errno;
+            }
+            break;
+        }
+        request = (request_t*)malloc(sizeof(request_t));
+
+        if (read_request(req_fifo, request)) {
+            if (error_sys_ignore_alarm(argv[0], "couldn't read request queue", alarm_status)) {
+                free(request);
+                close(req_fifo);
+                unlink(req_fifo_path);
+                return errno;
             }
         }
 
-        if (bath_open) {
-            request = (request_t*)malloc(sizeof(request_t));
+        if(write_log(request, "RECVD")) {
+            error_sys(argv[0], "couldn't write log");
+        }
 
-            if (read_request(req_fifo, request)) {
-                if (error_sys_ignore_alarm(argv[0], "couldn't read request queue", alarm_status)) {
-                    free(request);
-                    close(req_fifo);
-                    unlink(req_fifo_path);
-                    return errno;
-                }
+        if (pthread_create(&tid, NULL, th_operation, request)) {
+            if (error_sys_ignore_alarm(argv[0], "couldn't create thread to attend request", alarm_status)) {
+                free(request);
+                close(req_fifo);
+                unlink(req_fifo_path);
+                return errno;
             }
-
-            if(write_log(request, "RECVD")) {
-                error_sys(argv[0], "couldn't write log");
-            }
-
             if (pthread_create(&tid, NULL, th_operation, request)) {
-                if (error_sys_ignore_alarm(argv[0], "couldn't create thread to attend request", alarm_status)) {
-                    free(request);
-                    close(req_fifo);
-                    unlink(req_fifo_path);
-                    return errno;
-                }
-                if (pthread_create(&tid, NULL, th_operation, request)) {
-                    error_sys(argv[0], "couldn't create thread to attend request");
-                    free(request);
-                    close(req_fifo);
-                    unlink(req_fifo_path);
-                    return errno;
-                }
-            }
-
-            if (pthread_detach(tid)) {
-                char error[BUFFER_SIZE];
-                sprintf(error, "couldn't detach processing thread %ld", tid);
-                if (error_sys_ignore_alarm(argv[0], error, alarm_status)) {
-                    close(req_fifo);
-                    unlink(req_fifo_path);
-                    return errno;
-                }
-                if (pthread_detach(tid)) {
-                    close(req_fifo);
-                    unlink(req_fifo_path);
-                    return error_sys(argv[0], error);
-                }
+                error_sys(argv[0], "couldn't create thread to attend request");
+                free(request);
+                close(req_fifo);
+                unlink(req_fifo_path);
+                return errno;
             }
         }
-    }
 
+        if (pthread_detach(tid)) {
+            char error[BUFFER_SIZE];
+            sprintf(error, "couldn't detach processing thread %ld", tid);
+            if (error_sys_ignore_alarm(argv[0], error, alarm_status)) {
+                close(req_fifo);
+                unlink(req_fifo_path);
+                return errno;
+            }
+            if (pthread_detach(tid)) {
+                close(req_fifo);
+                unlink(req_fifo_path);
+                return error_sys(argv[0], error);
+            }
+        }
+        not_empty = request_queue_not_empty();
+    }
+    /*
     int empty;
     while (empty = request_queue_not_empty()) {
         if (empty == -1) {
@@ -220,7 +226,7 @@ int main(int argc, char *argv[]) {
             unlink(req_fifo_path);
             return errno;
         }
-    }
+    }*/
 
     // DEV
     printf("exited in %ds\n", (int)(time(NULL)-initial));
@@ -256,10 +262,11 @@ void *th_operation(void *arg) {
     request_t *request = (request_t*)arg;
 
     request_t reply;
-    fill_reply(&reply, request->id, request->pid, request->tid, request->dur, order++);
+    if (bath_open) fill_reply(&reply, request->id, request->pid, request->tid, request->dur, order++);
+    else fill_reply_error(&reply, request->id, request->pid, request->tid);
     free(request);
 
-    if(write_log(&reply, "ENTER")) {
+    if(write_log(&reply, (bath_open ? "ENTER" : "2LATE"))) {
         char program[BUFFER_SIZE];
         sprintf(program, "reply %d", reply.id);
         error_sys(program, "couldn't write log");
@@ -343,17 +350,19 @@ void *th_operation(void *arg) {
         }
     }
 
-    if (usleep(reply.dur)) {
-        char program[BUFFER_SIZE];
-        sprintf(program, "reply %d", reply.id);
-        error_sys(program, "couldn't process request duration");
-        return NULL;
-    }
+    if (reply.dur > 0) {
+        if (usleep(reply.dur)) {
+            char program[BUFFER_SIZE];
+            sprintf(program, "reply %d", reply.id);
+            error_sys(program, "couldn't process request duration");
+            return NULL;
+        }
 
-    if (write_log(&reply, "TIMUP")) {
-        char program[BUFFER_SIZE];
-        sprintf(program, "reply %d", reply.id);
-        error_sys(program, "couldn't write log");
+        if (write_log(&reply, "TIMUP")) {
+            char program[BUFFER_SIZE];
+            sprintf(program, "reply %d", reply.id);
+            error_sys(program, "couldn't write log");
+        }
     }
 
     return NULL;
@@ -364,5 +373,5 @@ int request_queue_not_empty() {
     if (sem_getvalue_send_request(&locked))
         return -1;
 
-    return (locked < 0) ? 1 : 0;
+    return (locked == 0) ? 1 : 0;
 }

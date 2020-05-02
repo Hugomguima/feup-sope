@@ -334,10 +334,12 @@ void *th_request(void *arg) {
         return NULL;
     }
 
-    if (write_log(&reply, "IAMIN")) {
-        char program[BUFFER_SIZE];
-        sprintf(program, "reply %d", reply.id);
-        error_sys(program, "couldn't write log");
+    if (reply.pl != -1) {
+        if (write_log(&reply, "IAMIN")) {
+            char program[BUFFER_SIZE];
+            sprintf(program, "reply %d", reply.id);
+            error_sys(program, "couldn't write log");
+        }
     }
 
     if (sem_free_reply(sem_reply, request.pid, request.tid)) {
