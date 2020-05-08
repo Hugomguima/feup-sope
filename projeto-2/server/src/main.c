@@ -36,17 +36,18 @@ char req_fifo_path[BUFFER_SIZE];
 void close_bathroom(int sig) {
     bath_open = 0;
     alarm_status = ALARM_TRIGGERED;
-    if (chmod(req_fifo_path, 0440)) {
-        error_sys("close", "error changing FIFO permissions");
+    printf("testealarm\n");
+    if (unlink(req_fifo_path)) {
+        error_sys("close", "error on unlinking public FIFO");
     }
 }
 
 void *th_operation(void *arg);
 
 void free_shared_memory() {
-    if (free_sync()) {
+    /*if (free_sync()) {
         error_sys("exit", "couldn't free synchronization system");
-    }
+    }*/
 }
 
 int request_queue_not_empty();
@@ -79,21 +80,12 @@ int main(int argc, char *argv[]) {
 
     free_parse_info(&info);
 
-    if (mkfifo(req_fifo_path, 0660)) {
-        return error_sys(argv[0], "couldn't create public request FIFO");
-    }
 
-    int req_fifo;
-    if ((req_fifo = open(req_fifo_path, O_RDONLY | O_NONBLOCK)) == -1) {
-        unlink(req_fifo_path);
-        return error_sys(argv[0], "couldn't open public request FIFO");
-    }
-
-    if (init_sync(O_CREAT)) {
+    /*if (init_sync(O_CREAT)) {
         close(req_fifo);
         unlink(req_fifo_path);
         return error_sys(argv[0], "couldn't initialize synchronization system");
-    }
+    }*/
 
     if (atexit(free_shared_memory)) {
         free_shared_memory();
@@ -105,8 +97,6 @@ int main(int argc, char *argv[]) {
     sigemptyset(&alarm_action.sa_mask);
     alarm_action.sa_flags = 0;
     if (sigaction(SIGALRM, &alarm_action, NULL)) {
-        close(req_fifo);
-        unlink(req_fifo_path);
         return error_sys(argv[0], "couldn't install alarm");
     }
 
@@ -123,18 +113,27 @@ int main(int argc, char *argv[]) {
     /*if (create_alarm(pthread_self(), exec_secs, SIGALRM, NULL)) {
         return error_sys(argv[0], "couldn't create alarm");
     }*/
+    if (mkfifo(req_fifo_path, 0660)) {
+        return error_sys(argv[0], "couldn't create public request FIFO");
+    }
+    int req_fifo;
+    if ((req_fifo = open(req_fifo_path, O_RDONLY)) == -1) {
+        error_sys_ignore_alarm(argv[0], "couldn't open public request FIFO", alarm_status);
+        unlink(req_fifo_path);
+        return -1;
+    }
 
-    int not_empty = request_queue_not_empty();
+    int empty = 1;
 
-    while (bath_open || not_empty) {
-        if (not_empty == -1) {
+    while (bath_open || !empty) {
+        /*if (not_empty == -1) {
             error_sys(argv[0], "error reading request queue");
             close(req_fifo);
             unlink(req_fifo_path);
             return errno;
-        }
+        }*/
 
-        if (sem_post_send_request()) {
+        /*if (sem_post_send_request()) {
             if (error_sys_ignore_alarm(argv[0], "couldn't unlock request queue", alarm_status)) {
                 close(req_fifo);
                 unlink(req_fifo_path);
@@ -154,10 +153,10 @@ int main(int argc, char *argv[]) {
                 return errno;
             }
             break;
-        }
+        }*/
         request = (request_t*)malloc(sizeof(request_t));
 
-        if (read_request(req_fifo, request)) {
+        if ((empty = read_request(req_fifo, request)) == -1) {
             if (error_sys_ignore_alarm(argv[0], "couldn't read request queue", alarm_status)) {
                 free(request);
                 close(req_fifo);
@@ -165,42 +164,43 @@ int main(int argc, char *argv[]) {
                 return errno;
             }
         }
-
-        if(write_log(request, "RECVD")) {
-            error_sys(argv[0], "couldn't write log");
-        }
-
-        if (pthread_create(&tid, NULL, th_operation, request)) {
-            if (error_sys_ignore_alarm(argv[0], "couldn't create thread to attend request", alarm_status)) {
-                free(request);
-                close(req_fifo);
-                unlink(req_fifo_path);
-                return errno;
+        if (!empty) {
+            if(write_log(request, "RECVD")) {
+                error_sys(argv[0], "couldn't write log");
             }
+
             if (pthread_create(&tid, NULL, th_operation, request)) {
-                error_sys(argv[0], "couldn't create thread to attend request");
-                free(request);
-                close(req_fifo);
-                unlink(req_fifo_path);
-                return errno;
+                if (error_sys_ignore_alarm(argv[0], "couldn't create thread to attend request", alarm_status)) {
+                    free(request);
+                    close(req_fifo);
+                    unlink(req_fifo_path);
+                    return errno;
+                }
+                if (pthread_create(&tid, NULL, th_operation, request)) {
+                    error_sys(argv[0], "couldn't create thread to attend request");
+                    free(request);
+                    close(req_fifo);
+                    unlink(req_fifo_path);
+                    return errno;
+                }
             }
-        }
 
-        if (pthread_detach(tid)) {
-            char error[BUFFER_SIZE];
-            sprintf(error, "couldn't detach processing thread %ld", tid);
-            if (error_sys_ignore_alarm(argv[0], error, alarm_status)) {
-                close(req_fifo);
-                unlink(req_fifo_path);
-                return errno;
-            }
             if (pthread_detach(tid)) {
-                close(req_fifo);
-                unlink(req_fifo_path);
-                return error_sys(argv[0], error);
+                char error[BUFFER_SIZE];
+                sprintf(error, "couldn't detach processing thread %ld", tid);
+                if (error_sys_ignore_alarm(argv[0], error, alarm_status)) {
+                    close(req_fifo);
+                    unlink(req_fifo_path);
+                    return errno;
+                }
+                if (pthread_detach(tid)) {
+                    close(req_fifo);
+                    unlink(req_fifo_path);
+                    return error_sys(argv[0], error);
+                }
             }
         }
-        not_empty = request_queue_not_empty();
+        //not_empty = request_queue_not_empty();
     }
     /*
     int empty;
@@ -252,10 +252,10 @@ int main(int argc, char *argv[]) {
         return errno;
     }
 
-    if (unlink(req_fifo_path)) {
+    /*if (unlink(req_fifo_path)) { unlinked by alarm
         error_sys(argv[0], "couldn't unlink public request FIFO");
         return errno;
-    }
+    }*/
 
     pthread_exit(0);
 }
@@ -272,15 +272,9 @@ void *th_operation(void *arg) {
     else fill_reply_error(&reply, request->id, request->pid, request->tid);
     free(request);
 
-    if(write_log(&reply, (bath_open ? "ENTER" : "2LATE"))) {
-        char program[BUFFER_SIZE];
-        sprintf(program, "reply %d", reply.id);
-        error_sys(program, "couldn't write log");
-    }
-
     sem_t *sem_reply;
 
-    if ((sem_reply = sem_open_reply(reply.pid, reply.tid)) == NULL) {
+    /*if ((sem_reply = sem_open_reply(reply.pid, reply.tid)) == NULL) {
         char program[BUFFER_SIZE];
         sprintf(program, "reply %d", reply.id);
         if (errno == ENOENT) { //  server couldn't write reply due to client closing the private FIFO
@@ -293,7 +287,7 @@ void *th_operation(void *arg) {
             return NULL;
         }
         return NULL;
-    }
+    }*/
 
     struct sigaction pipe_action;
     pipe_action.sa_handler = SIG_IGN;
@@ -311,7 +305,7 @@ void *th_operation(void *arg) {
     sprintf(reply_fifo_path, "/tmp/%d.%ld", reply.pid, reply.tid);
     int reply_fifo;
 
-    if ((reply_fifo = open(reply_fifo_path, O_WRONLY | O_NONBLOCK)) == -1) {
+    if ((reply_fifo = open(reply_fifo_path, O_WRONLY)) == -1) {
         char program[BUFFER_SIZE];
         sprintf(program, "reply %d", reply.id);
         if (errno == ENXIO || errno == ENOENT) { //  server couldn't write reply due to client closing the private FIFO
@@ -323,6 +317,12 @@ void *th_operation(void *arg) {
             sem_post_reply(sem_reply);
             return NULL;
         }
+    }
+
+    if(write_log(&reply, (bath_open ? "ENTER" : "2LATE"))) {
+        char program[BUFFER_SIZE];
+        sprintf(program, "reply %d", reply.id);
+        error_sys(program, "couldn't write log");
     }
 
     if (reply_fifo != -1) {
@@ -349,11 +349,11 @@ void *th_operation(void *arg) {
             error_sys(program, "couldn't close private reply FIFO");
         }
     }
-    if (sem_post_reply(sem_reply)) {
+    /*if (sem_post_reply(sem_reply)) {
         char program[BUFFER_SIZE];
         sprintf(program, "reply %d", reply.id);
         error_sys(program, "couldn't notify private reply semaphore");
-    }
+    }*/
 
     if (reply.dur > 0) {
         if (usleep(reply.dur)) {
@@ -369,7 +369,6 @@ void *th_operation(void *arg) {
             error_sys(program, "couldn't write log");
         }
     }
-
     return NULL;
 }
 
