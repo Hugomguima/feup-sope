@@ -8,7 +8,7 @@
 #define ALARM_CHILL             0
 #define ALARM_TRIGGERED         1
 
-#define SEM_SHARED              0
+#define SEM_NOT_SHARED          0
 
 #define FIFO_WAIT_TIME          10000
 

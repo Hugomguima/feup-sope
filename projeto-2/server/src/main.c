@@ -18,6 +18,7 @@
 
 /* C LIBRARY HEADERS */
 #include <errno.h>
+#include <semaphore.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -47,6 +48,17 @@ char req_fifo_path[BUFFER_SIZE];
 
 // Request processor
 void* request_processor(void *arg);
+
+// Thread limiting semaphore
+sem_t thread_locker;
+// Maximum number of threads
+int max_threads;
+
+// Bathroom limiting semaphore
+sem_t bathroom_locker;
+// Bathroom capacity
+int bath_capacity;
+
 
 /* -------------------------------------------------------------------------
                             MAIN THREAD
@@ -85,8 +97,32 @@ int main(int argc, char *argv[]) {
 
     // Execution duration
     int exec_secs = info.exec_secs;
+    // Maximum number of threads
+    max_threads = info.max_threads;
+    // Bathroom capacity
+    bath_capacity = info.capacity;
 
     free_parse_info(&info);
+
+    /* -------------------------------------------------------------------------
+                            INITIALIZE THREAD LOCKER
+    /-------------------------------------------------------------------------*/
+    if (max_threads != -1) {
+        if (sem_init(&thread_locker, SEM_NOT_SHARED, max_threads)) {
+            error_sys(argv[0], "couldn't initialize thread locker");
+            return -1;
+        }
+    }
+
+    /* -------------------------------------------------------------------------
+                            INITIALIZE BATHROOM LOCKER
+    /-------------------------------------------------------------------------*/
+    if (bath_capacity != -1) {
+        if (sem_init(&bathroom_locker, SEM_NOT_SHARED, bath_capacity)) {
+            error_sys(argv[0], "couldn't initialize bathroom locker");
+            return -1;
+        }
+    }
 
     /* -------------------------------------------------------------------------
                                 INSTALL ALARM
@@ -152,6 +188,35 @@ int main(int argc, char *argv[]) {
     int ret;
     // main loop
     while (bath_open || !empty) {
+
+        // check thread locker
+        if (max_threads != -1) {
+            if (sem_wait(&thread_locker)) {
+                // error wasn't caused by alarm
+                if (error_sys_ignore_alarm(argv[0], "couldn't wait for thread locker", alarm_status)) {
+                    close(req_fifo);
+                    pthread_exit(NULL);
+                }
+                // error was caused by alarm, proceed as normal
+                empty = 0;
+                continue;
+            }
+        }
+
+        if (bath_open && (bath_capacity != -1)) {
+            if (sem_wait(&bathroom_locker)) {
+                // error wasn't caused by alarm
+                if (error_sys_ignore_alarm(argv[0], "couldn't wait for bathroom locker", alarm_status)) {
+                    close(req_fifo);
+                    pthread_exit(NULL);
+                }
+                // error was caused by alarm, proceed as normal
+                empty = 0;
+                sem_post(&thread_locker);
+                continue;
+            }
+        }
+
         request = (request_t*)malloc(sizeof(request_t));
 
         ret = read(req_fifo, request, sizeof(request_t));
@@ -235,6 +300,18 @@ void cleanup(void) {
             error_sys("cleanup", "error on unlinking public FIFO");
         }
     }
+
+    if (max_threads != -1) {
+        if (sem_destroy(&thread_locker)) {
+            error_sys("cleanup", "couldn't destroy thread locker");
+        }
+    }
+
+    if (bath_capacity != -1) {
+        if (sem_destroy(&bathroom_locker)) {
+            error_sys("cleanup", "couldn't destroy bathroom locker");
+        }
+    }
 }
 
 /* -------------------------------------------------------------------------
@@ -242,6 +319,18 @@ void cleanup(void) {
 /-------------------------------------------------------------------------*/
 void* request_processor(void *arg) {
     if (arg == NULL) {
+        // unlock space for threads
+        if (max_threads != -1) {
+            if (sem_post(&thread_locker)) {
+                error_sys("request_processor", "couldn't unlock thread locker");
+            }
+        }
+        // unlock space in bathroom
+        if (max_threads != -1) {
+            if (sem_post(&bathroom_locker)) {
+                error_sys("request_processor", "couldn't unlock bathroom locker");
+            }
+        }
         return NULL;
     }
 
@@ -346,6 +435,22 @@ void* request_processor(void *arg) {
             char program[BUFFER_SIZE];
             sprintf(program, "reply %d", reply.id);
             error_sys(program, "couldn't write log");
+        }
+    }
+
+    /* -------------------------------------------------------------------------
+                                UNLOCKING LOCKERS
+    /-------------------------------------------------------------------------*/
+    // unlock space for threads
+    if (max_threads != -1) {
+        if (sem_post(&thread_locker)) {
+            error_sys("request_processor", "couldn't unlock thread locker");
+        }
+    }
+    // unlock space in bathroom
+    if (bath_capacity != -1) {
+        if (sem_post(&bathroom_locker)) {
+            error_sys("request_processor", "couldn't unlock bathroom locker");
         }
     }
 

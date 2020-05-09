@@ -331,7 +331,6 @@ void* request_sender(void *arg) {
     } else {
         if (alarm_status == ALARM_CHILL) { // stop further requesting
             alarm(0);
-            printf("teste1\n");
             pthread_kill(main_thread_tid, SIGALRM);
         }
         if (write_log(&reply, "CLOSD")) {
