@@ -10,6 +10,6 @@
 
 #define SEM_NOT_SHARED          0
 
-#define FIFO_WAIT_TIME          10000
+#define FIFO_WAIT_TIME          20000
 
 #endif /* end of include guard: CONSTANTS_H_INCLUDED */

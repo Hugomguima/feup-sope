@@ -276,20 +276,32 @@ void* request_sender(void *arg) {
                         OPENING PRIVATE REPLY FIFO
     /-------------------------------------------------------------------------*/
     int reply_fifo;
-    if ((reply_fifo = open(reply_fifo_path, O_RDONLY)) == -1) {
-        char program[BUFFER_SIZE];
-        sprintf(program, "request %d", request.id);
-        // wasn't alarm caused
-        if (error_sys_ignore_alarm(program, "couldn't open private reply FIFO", alarm_status)) {
-            unlink(reply_fifo_path);
-            return NULL;
-        }
-        // it was alarm, try again
+    while (1) {
         if ((reply_fifo = open(reply_fifo_path, O_RDONLY)) == -1) {
-            error_sys(program, "couldn't open private reply FIFO");
-            unlink(reply_fifo_path);
-            return NULL;
+            if (errno == EMFILE || errno == ENOMEM) { // reached limit of files for this process opened (stop thread bombing the server pls :'( )
+                write(STDERR_FILENO, "TOO MANY FILES GODAMNIT\n", 24);
+                usleep(FIFO_WAIT_TIME);
+                continue;
+            }
+            char program[BUFFER_SIZE];
+            sprintf(program, "request %d", request.id);
+            // wasn't alarm caused
+            if (error_sys_ignore_alarm(program, "couldn't open private reply FIFO", alarm_status)) {
+                unlink(reply_fifo_path);
+                return NULL;
+            }
+            // it was alarm, try again
+            if ((reply_fifo = open(reply_fifo_path, O_RDONLY)) == -1) {
+                if (errno == ENOMEM || errno == ENFILE) { // reached limit of files opened (stop thread bombing the server pls :'( )
+                    usleep(FIFO_WAIT_TIME);
+                    continue;
+                }
+                error_sys(program, "couldn't open private reply FIFO");
+                unlink(reply_fifo_path);
+                return NULL;
+            }
         }
+        break;
     }
 
     /* -------------------------------------------------------------------------

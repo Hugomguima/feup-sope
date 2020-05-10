@@ -342,18 +342,8 @@ void* request_processor(void *arg) {
 
     if (bath_open) {
         fill_reply(&reply, request->id, request->pid, request->tid, request->dur, order++);
-        if (write_log(&reply, "ENTER")) {
-            char program[BUFFER_SIZE];
-            sprintf(program, "reply %d", reply.id);
-            error_sys(program, "couldn't write log");
-        }
     } else {
         fill_reply_error(&reply, request->id, request->pid, request->tid);
-        if (write_log(&reply, "2LATE")) {
-            char program[BUFFER_SIZE];
-            sprintf(program, "reply %d", reply.id);
-            error_sys(program, "couldn't write log");
-        }
     }
 
     free(request);
@@ -418,6 +408,20 @@ void* request_processor(void *arg) {
             char program[BUFFER_SIZE];
             sprintf(program, "reply %d", reply.id);
             error_sys(program, "couldn't close private reply FIFO");
+        }
+    }
+
+    if (reply.dur > 0) {
+        if (write_log(&reply, "ENTER")) {
+            char program[BUFFER_SIZE];
+            sprintf(program, "reply %d", reply.id);
+            error_sys(program, "couldn't write log");
+        }
+    } else {
+        if (write_log(&reply, "2LATE")) {
+            char program[BUFFER_SIZE];
+            sprintf(program, "reply %d", reply.id);
+            error_sys(program, "couldn't write log");
         }
     }
 

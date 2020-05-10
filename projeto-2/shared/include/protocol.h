@@ -14,8 +14,8 @@
 
 typedef struct request request_t;
 
-#define MAX_DURATION    999999
-#define MIN_DURATION    10000
+#define MAX_DURATION    10000
+#define MIN_DURATION    1000
 
 #define REPLY_TOLERANCE 5
 
