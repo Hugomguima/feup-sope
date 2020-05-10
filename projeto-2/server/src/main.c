@@ -234,6 +234,7 @@ int main(int argc, char *argv[]) {
         } else if (ret == 0) { // EOF
             free(request);
             empty = 1;
+            usleep(FIFO_WAIT_TIME);
             continue;
         }
 
