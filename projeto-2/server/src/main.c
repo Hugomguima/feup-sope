@@ -41,7 +41,7 @@ void close_bathroom(int signo);
 void cleanup(void);
 
 // Order of entrance
-int order = 1;
+int order = 0;
 
 // Public Request FIFO
 char req_fifo_path[BUFFER_SIZE];
@@ -58,6 +58,11 @@ int max_threads;
 sem_t bathroom_locker;
 // Bathroom capacity
 int bath_capacity;
+
+int* bath_places;
+
+#define OPEN    0
+#define USED    1
 
 
 /* -------------------------------------------------------------------------
@@ -122,6 +127,8 @@ int main(int argc, char *argv[]) {
             error_sys(argv[0], "couldn't initialize bathroom locker");
             return -1;
         }
+        bath_places = (int*)malloc(sizeof(int) * bath_capacity);
+        memset(bath_places, OPEN, sizeof(int) * bath_capacity);
     }
 
     /* -------------------------------------------------------------------------
@@ -203,6 +210,7 @@ int main(int argc, char *argv[]) {
             }
         }
 
+        int bath_assigned = -1;
         if (bath_open && (bath_capacity != -1)) {
             if (sem_wait(&bathroom_locker)) {
                 // error wasn't caused by alarm
@@ -212,10 +220,33 @@ int main(int argc, char *argv[]) {
                 }
                 // error was caused by alarm, proceed as normal
                 empty = 0;
-                sem_post(&thread_locker);
+                if (max_threads != -1) sem_post(&thread_locker);
+                continue;
+            }
+
+            for (int i = 0; i < bath_capacity; i++) {
+                if (bath_places[i] == OPEN) {
+                    bath_places[i] = USED;
+                    bath_assigned = i;
+                    break;
+                }
+            }
+
+            if (bath_assigned == -1) {
+                char error[BUFFER_SIZE];
+                sprintf(error, "%s: failed to assign bathroom\n", argv[0]);
+                write(STDERR_FILENO, error, strlen(error));
+                if (max_threads != -1) sem_post(&thread_locker);
+                sem_post(&bathroom_locker);
+                empty = 0;
                 continue;
             }
         }
+
+        void **arg = malloc(sizeof(void*) * 2);
+        arg[1] = malloc(sizeof(int));
+
+        *((int*)arg[1]) = (bath_capacity == -1) ? order++ : bath_assigned;
 
         request = (request_t*)malloc(sizeof(request_t));
 
@@ -226,17 +257,25 @@ int main(int argc, char *argv[]) {
             if (error_sys_ignore_alarm(argv[0], "couldn't read request queue", alarm_status)) {
                 close(req_fifo);
                 free(request);
+                free(arg[1]);
+                free(arg);
                 pthread_exit(NULL);
             }
             // error was caused by alarm, proceed as normal
             free(request);
+            free(arg[1]);
+            free(arg);
             continue;
         } else if (ret == 0) { // EOF
             free(request);
+            free(arg[1]);
+            free(arg);
             empty = 1;
             usleep(FIFO_WAIT_TIME);
             continue;
         }
+
+        arg[0] = (void*)request;
 
         empty = 0;
 
@@ -245,12 +284,14 @@ int main(int argc, char *argv[]) {
         }
 
         // process request
-        if (pthread_create(&tid, NULL, request_processor, request)) {
+        if (pthread_create(&tid, NULL, request_processor, arg)) {
             error_sys(argv[0], "couldn't create thread to process request");
             usleep(1000); // sleep and try again
-            if (pthread_create(&tid, NULL, request_processor, request)) {
+            if (pthread_create(&tid, NULL, request_processor, arg)) {
                 error_sys(argv[0], "couldn't create thread to process request");
                 free(request);
+                free(arg[1]);
+                free(arg);
                 close(req_fifo);
                 pthread_exit(NULL);
             }
@@ -312,6 +353,7 @@ void cleanup(void) {
         if (sem_destroy(&bathroom_locker)) {
             error_sys("cleanup", "couldn't destroy bathroom locker");
         }
+        free(bath_places);
     }
 }
 
@@ -327,7 +369,7 @@ void* request_processor(void *arg) {
             }
         }
         // unlock space in bathroom
-        if (max_threads != -1) {
+        if (bath_capacity != -1) {
             if (sem_post(&bathroom_locker)) {
                 error_sys("request_processor", "couldn't unlock bathroom locker");
             }
@@ -335,19 +377,47 @@ void* request_processor(void *arg) {
         return NULL;
     }
 
-    request_t *request = (request_t*)arg;
+    void **args = (void**)arg;
+
+    if (args[0] == NULL || args[1] == NULL) {
+        if (max_threads != -1) {
+            if (sem_post(&thread_locker)) {
+                error_sys("request_processor", "couldn't unlock thread locker");
+            }
+        }
+        // unlock space in bathroom
+        if (bath_capacity != -1) {
+            if (args[1] != NULL) {
+                int bath_freed = *((int*)args[1]);
+                if (bath_freed >= 0 && bath_freed < bath_capacity)
+                    bath_places[bath_freed] = OPEN;
+            }
+            if (sem_post(&bathroom_locker)) {
+                error_sys("request_processor", "couldn't unlock bathroom locker");
+            }
+        }
+        if (args[0] != NULL) free(args[0]);
+        if (args[1] != NULL) free(args[1]);
+        free(args);
+        return NULL;
+    }
+
+    request_t *request = ((request_t*)args[0]);
+    int bath_order = *((int*)args[1]);
     /* -------------------------------------------------------------------------
                                 CREATE REPLY
     /-------------------------------------------------------------------------*/
     request_t reply;
 
     if (bath_open) {
-        fill_reply(&reply, request->id, request->pid, request->tid, request->dur, order++);
+        fill_reply(&reply, request->id, request->pid, request->tid, request->dur, bath_order + 1);
     } else {
         fill_reply_error(&reply, request->id, request->pid, request->tid);
     }
 
-    free(request);
+    free(args[0]);
+    free(args[1]);
+    free(args);
 
     /* -------------------------------------------------------------------------
                                 PREPARE REPLY FIFO
@@ -454,6 +524,9 @@ void* request_processor(void *arg) {
     }
     // unlock space in bathroom
     if (bath_capacity != -1) {
+        if (bath_order >= 0 && bath_order < bath_capacity) {
+            bath_places[bath_order] = OPEN;
+        }
         if (sem_post(&bathroom_locker)) {
             error_sys("request_processor", "couldn't unlock bathroom locker");
         }
