@@ -76,5 +76,24 @@ int parse_cmd(int argc, char *argv[], parse_info_t *info) {
         flags |= FLAG_ERR;
         return flags;
     }
+
+    if (info->exec_secs <= 0) {
+        write(STDERR_FILENO, "The execution time must be greater than zero\n", 45);
+        flags |= FLAG_ERR;
+        return flags;
+    }
+
+    if ((flags & FLAG_THREADS) && info->max_threads <= 0) {
+        write(STDERR_FILENO, "The number of threads must be greater than zero\n", 48);
+        flags |= FLAG_ERR;
+        return flags;
+    }
+
+    if ((flags & FLAG_PLACES) && info->capacity <= 0) {
+        write(STDERR_FILENO, "The bathroom capacity must be greater than zero\n", 48);
+        flags |= FLAG_ERR;
+        return flags;
+    }
+
     return flags;
 }

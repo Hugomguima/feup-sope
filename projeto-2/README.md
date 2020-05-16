@@ -51,20 +51,20 @@ The executable files are `./bin/` directory after you run the command `make` in 
 
 To run the server, you must specify the time the server will be executing in the flag `-t` and the name of the public channel from which the server will accept requests, can additionally specify the maximum number of threads and the capacity of the bathroom
 ```sh
-./bin/Q1 <-t nsecs> [-l nplaces] [-n nthreads] fifoname
+./bin/Q2 <-t nsecs> [-l nplaces] [-n nthreads] fifoname
 ```
 or can be run via the symbolic link created by `make`
 ```sh
-./Q1 <-t nsecs> [-l nplaces] [-n nthreads] fifoname
+./Q2 <-t nsecs> [-l nplaces] [-n nthreads] fifoname
 ```
 
 To run the client, you must specify the time the client will be executing in the flag `-t` and the name of the public channel of the server to which the client will send requests
 ```sh
-./bin/U1 <-t nsecs> fifoname
+./bin/U2 <-t nsecs> fifoname
 ```
 or can be run via the symbolic link created by `make`
 ```sh
-./U1 <-t nsecs> fifoname
+./U2 <-t nsecs> fifoname
 ```
 
 ## Description
@@ -84,19 +84,27 @@ In the client program ***U***:
 - `fifoname` – public channel name (***FIFO***) for communication with the server
 
 ## Synchronization mechanisms
+In order to limit the number of threads running on the server and the number of clients using the bathroom at the same time, we opted to use two semaphores without name in the server process.
 
-To solve synchronization issues we opted to use one public semaphores (represented above by the colour green) and one private per request (represented above by the colour red), as show in the image below
+The schema of the system can be seen in the image below:
+<img src="./images/sync_system.png" width="650px" align="center">
 
-<img src="./images/sync_system.png" width="800px" align="center">
+### Thread semaphore
+The semaphore responsible of limiting the number of threads is initialized with the argument passed in the `-n` flag, and before reading any request, and thus creating a new thread, the server waits for an empty space on the semaphore (this is, the value of the semaphore is greater than zero (can be decremented)).
 
-As the *FIFO*'s are opened with the flag `O_NONBLOCK` active, the `read` call returns immediately whether the *FIFO* has data or not (non blocking call) even if there is a process or thread with the *FIFO* open for writing. As for the `write` call, it will return error if there's no process or thread with the *FIFO* open for reading.
+The server then proceeds to create a thread to process the request, the latter unlocks a space in the semaphore upon exit (increments the value), thus unlocking.
 
-Thus, we only need to synchronize the reading from *FIFO*, resulting on the scheme above.
+### Bathroom semaphore
+The semaphore responsible of limiting the number of clients using the bathroom is initialized with the argument passed in the `-l` flag, and before reading any request, and thus creating a new thread, the server waits for an empty space on the semaphore (this is, the value of the semaphore is greater than zero (can be decremented)).
 
-The public semaphore guarantees there is data in the *FIFO* before the server reads it, getting unlocked (using `sem_post`) by the client after writing the request, while the server waits for the semaphore to be unlocked (using `sem_wait`).
-On the other hand, the private semaphore is used to guarantee the client has data in the reply *FIFO* before reading it, the process is similar to the public semaphore, as the client waits for the semaphore to be unlocked by the server (the server unlocks it after trying to write the reply).
+The server then proceeds to create a thread to process the request, the latter unlocks a space in the semaphore upon exit (increments the value), thus unlocking.
 
-### Parsing
+### Extra
+The arguments in the flag `-n` and `-l` are the values initialized in the semaphore, thus requiring to be higher than zero, one flag doesn't require other to be active.
+
+If a flag isn't active then the semaphore isn't created and results on *unlimited* number of threads or bathroom capacity.
+
+## Parsing
 To parse the arguments passed via the command line, it was created two parsing methods, one for the [client](./client/src/parse.c), the other for the [server](./server/src/parse.c), as they receive different arguments.
 
 The structure of the parsing system is similar in both cases, returning a bit mask to identify which flags were present on the arguments, and additional information, such as the path, is returned in the argument by using a structure to store the additional information needed such as the *FIFO* name, and in the server side, the *maximum number of threads* and the *bathroom capacity*.

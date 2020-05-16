@@ -1,8 +1,8 @@
 #!/bin/sh
 
 FIFO_NAME="fifo"
-Q="Q1"
-U="U1"
+Q="Q2"
+U="U2"
 q_log="${Q}.log"
 q_err="${Q}.err"
 u_log="${U}.log"
