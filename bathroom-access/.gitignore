@@ -2,5 +2,7 @@
 lib/
 obj/
 bin/
-Q*
-U*
+Q1
+Q2
+U1
+U2
